@@ -1,0 +1,377 @@
+/* ==========================================================================
+   composants.css — briques d'interface réutilisables
+   Toutes les cibles tactiles mesurent au moins 44 × 44 px (--cible).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Carte : bloc arrondi sur fond doux
+   -------------------------------------------------------------------------- */
+.carte {
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: var(--espace);
+  box-shadow: 0 1px 3px var(--ombre);
+}
+
+.carte__titre {
+  font-size: 1.125rem;
+  margin-bottom: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Boutons
+   .bouton seul = secondaire ; variantes --principal, --secondaire, --danger, --icone
+   -------------------------------------------------------------------------- */
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: var(--cible);
+  min-height: var(--cible);
+  padding: 10px 20px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform var(--duree) var(--courbe),
+    background-color var(--duree) var(--courbe),
+    filter var(--duree) var(--courbe);
+  touch-action: manipulation;
+}
+
+.bouton:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+/* Retour visuel au toucher */
+.bouton:active {
+  transform: scale(0.96);
+}
+
+.bouton:disabled,
+.bouton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bouton svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bouton--principal {
+  background: var(--accent);
+  color: var(--sur-accent);
+}
+
+.bouton--principal:hover {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.bouton--secondaire {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.bouton--danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--sur-accent);
+}
+
+.bouton--danger:hover {
+  background: var(--danger);
+  filter: brightness(1.08);
+}
+
+/* Bouton rond qui ne contient qu'une icône (libellé via aria-label) */
+.bouton--icone {
+  width: var(--cible);
+  height: var(--cible);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--texte);
+}
+
+.bouton--icone:hover {
+  background: color-mix(in srgb, var(--texte) 8%, transparent);
+}
+
+.bouton--icone svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Bouton qui occupe toute la largeur (zone du pouce) */
+.bouton--large {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Puce : filtre de catégorie (bouton bascule avec aria-pressed)
+   -------------------------------------------------------------------------- */
+.puce {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--cible);
+  padding: 8px 16px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--texte);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  transition: background-color var(--duree) var(--courbe), color var(--duree) var(--courbe);
+}
+
+.puce[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--sur-accent);
+}
+
+/* Rangée de puces défilant horizontalement */
+.puces {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-block: 4px;
+  scrollbar-width: none;
+}
+
+.puces::-webkit-scrollbar {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Champ de formulaire : libellé, saisie, aide, erreur
+   -------------------------------------------------------------------------- */
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champ__libelle {
+  font-weight: 600;
+}
+
+.champ__saisie {
+  width: 100%;
+  min-height: var(--cible);
+  padding: 10px 14px;
+  /* Bordure contrastée (≥ 3:1) : elle délimite un composant interactif */
+  border: 1px solid var(--texte-doux);
+  border-radius: var(--rayon-petit);
+  background: var(--surface);
+  color: var(--texte);
+  font-size: 1rem; /* 16 px : évite le zoom automatique sur iOS */
+  transition: border-color var(--duree) var(--courbe);
+}
+
+textarea.champ__saisie {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.champ__saisie::placeholder {
+  color: var(--texte-doux);
+}
+
+.champ__saisie:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
+.champ__aide {
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+.champ__erreur {
+  color: var(--danger);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.champ__saisie[aria-invalid="true"] {
+  border-color: var(--danger);
+  border-width: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Boutons segmentés : groupe de boutons radio (ex. difficulté)
+   <fieldset class="segmente">
+     <legend>…</legend>
+     <div class="segmente__options">
+       <label class="segmente__option"><input type="radio" …><span>…</span></label>
+   -------------------------------------------------------------------------- */
+.segmente {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.segmente legend {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.segmente__options {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: var(--fond);
+}
+
+.segmente__option {
+  flex: 1;
+  position: relative;
+}
+
+/* Le bouton radio reste accessible au clavier mais disparaît visuellement */
+.segmente__option input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.segmente__option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cible);
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: var(--texte);
+  font-weight: 600;
+  text-align: center;
+  transition: background-color var(--duree) var(--courbe), color var(--duree) var(--courbe);
+}
+
+.segmente__option input:checked + span {
+  background: var(--accent);
+  color: var(--sur-accent);
+}
+
+.segmente__option input:focus-visible + span {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Barre d'onglets : fixée en bas, dans la zone du pouce
+   -------------------------------------------------------------------------- */
+.barre-onglets {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  min-height: calc(var(--hauteur-onglets) + var(--sa-bas));
+  padding: 4px calc(8px + var(--sa-droite)) var(--sa-bas) calc(8px + var(--sa-gauche));
+  border-top: 1px solid var(--bordure);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.barre-onglets__onglet {
+  flex: 1;
+  max-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  border-radius: var(--rayon-petit);
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--duree) var(--courbe);
+}
+
+.barre-onglets__onglet svg {
+  width: 26px;
+  height: 26px;
+  padding: 1px 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--duree) var(--courbe);
+}
+
+.barre-onglets__onglet[aria-current="page"] {
+  color: var(--accent);
+}
+
+.barre-onglets__onglet[aria-current="page"] svg {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Bouton flottant « + » : au-dessus de la barre d'onglets, côté droit
+   -------------------------------------------------------------------------- */
+.bouton-flottant {
+  position: fixed;
+  right: calc(var(--espace) + var(--sa-droite));
+  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace));
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--sur-accent);
+  box-shadow: 0 6px 16px var(--ombre), 0 2px 4px var(--ombre);
+  transition: transform var(--duree) var(--courbe);
+  touch-action: manipulation;
+}
+
+.bouton-flottant:active {
+  transform: scale(0.92);
+}
+
+.bouton-flottant svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* Sur grand écran, le bouton s'aligne sur le bord de la colonne de contenu */
+@media (min-width: 1280px) {
+  .bouton-flottant {
+    right: calc((100vw - 1200px) / 2 + var(--espace));
+  }
+}

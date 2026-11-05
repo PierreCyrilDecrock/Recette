@@ -43,6 +43,11 @@ docs/         cahier des charges et plan de développement
 - Tous les textes d'interface vont dans `js/textes.js` (objet `T`), jamais en dur dans les écrans.
 - Chaque écran exporte `afficher(conteneur, params)` qui peut renvoyer une fonction de nettoyage
   (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…).
+- Routage (`js/app.js`, table `ROUTES`) : `#/favoris` réutilise `liste.js` (`params.favoris`),
+  `#/nouvelle` réutilise `edition.js` (sans `id`). Le routeur donne le focus au `<h1>` de l'écran ;
+  les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + ».
+- Les libellés de `index.html` portent `data-texte` / `data-texte-aria` (chemin dans `T`) :
+  `app.js` les remplace au démarrage.
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
 - Code commenté en français ; noms de variables et de fonctions en français, alignés sur le
   modèle de données (`titre`, `portions`, `tempsPreparation`, `etapes`…).
@@ -56,7 +61,11 @@ docs/         cahier des charges et plan de développement
   et 1024 px (liste et fiche côte à côte).
 - Actions principales dans la zone du pouce (bas de l'écran) ; cibles tactiles ≥ 44 × 44 px.
 - Couleurs uniquement via les variables CSS : `--accent`, `--surface`, `--fond`, `--texte`,
-  `--texte-doux`, `--bordure`. Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1.
+  `--texte-doux`, `--bordure`, plus `--sur-accent` (texte posé sur l'accent ou le danger),
+  `--danger` et `--ombre`. Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1 (ratios notés
+  dans `css/base.css`).
+- Thème : `light-dark()` + `color-scheme` suivent le système ; `data-theme="clair|sombre"` sur
+  `<html>` force l'un des deux.
 - Cartes : coins arrondis de 16 px, marges internes de 16 px, ombre légère ou bordure fine.
 - Typographie : `ui-rounded, system-ui, sans-serif` ; corps du texte ≥ 16 px.
 - Transitions de 150 à 250 ms ; tout mouvement désactivé avec `prefers-reduced-motion`.

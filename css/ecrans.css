@@ -1,0 +1,49 @@
+/* ==========================================================================
+   ecrans.css — mises en page propres à chaque écran
+   Rempli au fil des étapes ; points de rupture : 768 px et 1024 px.
+   ========================================================================== */
+
+/* Commun : titre d'écran (reçoit le focus à chaque navigation) */
+.titre-ecran {
+  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+  margin-bottom: var(--espace);
+}
+
+/* Provisoire (étape 1) : écrans d'attente, voir js/ecrans/provisoire.js */
+.parametres {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+}
+
+.parametres dt {
+  font-weight: 600;
+}
+
+.parametres dd {
+  overflow-wrap: anywhere;
+}
+
+.actions-provisoires {
+  margin-top: var(--espace);
+}
+
+/* --------------------------------------------------------------------------
+   E1 — Liste des recettes et favoris (js/ecrans/liste.js)
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   E2 — Fiche recette (js/ecrans/fiche.js)
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   E3 — Création et modification (js/ecrans/edition.js)
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   E4 — Mode cuisine (js/ecrans/cuisine.js)
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   E5 — Réglages (js/ecrans/reglages.js)
+   -------------------------------------------------------------------------- */

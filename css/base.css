@@ -1,0 +1,270 @@
+/* ==========================================================================
+   base.css — reset léger, thèmes, typographie, mise en page générale
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Thèmes
+   Le thème suit prefers-color-scheme grâce à color-scheme + light-dark().
+   L'attribut data-theme="clair|sombre" sur <html> force l'un des deux.
+
+   Contrastes WCAG (calculés, cible ≥ 4,5:1 pour le texte) :
+   Thème clair                         Thème sombre
+   --texte       / --surface  15,71    --texte       / --surface  14,46
+   --texte-doux  / --surface   6,33    --texte-doux  / --surface   7,69
+   --accent      / --surface   5,21    --accent      / --surface   6,62
+   --accent      / --fond      4,84    --accent      / --fond      7,43
+   --sur-accent  / --accent    5,21    --sur-accent  / --accent    7,24
+   --danger      / --surface   6,54    --danger      / --surface   7,21
+   --sur-accent  / --danger    6,54    --sur-accent  / --danger    7,88
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light dark;
+
+  /* Fond de page et surfaces (cartes, barres) */
+  --fond: light-dark(#faf6f2, #171311);
+  --surface: light-dark(#ffffff, #241e1b);
+  /* Texte principal et secondaire */
+  --texte: light-dark(#2b211c, #f6efea);
+  --texte-doux: light-dark(#6b5d54, #bcafa6);
+  /* Bordures décoratives (cartes, séparateurs) */
+  --bordure: light-dark(#e9e0d8, #3b322d);
+  /* Accent orange tomate et texte posé dessus */
+  --accent: light-dark(#c43d1d, #ff7f5e);
+  --sur-accent: light-dark(#ffffff, #22130e);
+  /* Actions destructrices */
+  --danger: light-dark(#b3261e, #ff8a80);
+  /* Ombre légère des cartes et du bouton flottant */
+  --ombre: light-dark(rgb(60 30 15 / 0.08), rgb(0 0 0 / 0.4));
+
+  /* Formes et espacements */
+  --rayon: 16px;
+  --rayon-petit: 10px;
+  --espace: 16px;
+  --cible: 44px;
+
+  /* Mouvements (150 à 250 ms) */
+  --duree: 200ms;
+  --courbe: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Hauteurs de la barre d'onglets et de l'en-tête (hors safe areas) */
+  --hauteur-onglets: 64px;
+  --hauteur-entete: 56px;
+
+  /* Safe areas (encoches, barre système) */
+  --sa-haut: env(safe-area-inset-top, 0px);
+  --sa-bas: env(safe-area-inset-bottom, 0px);
+  --sa-gauche: env(safe-area-inset-left, 0px);
+  --sa-droite: env(safe-area-inset-right, 0px);
+}
+
+:root[data-theme="clair"] { color-scheme: light; }
+:root[data-theme="sombre"] { color-scheme: dark; }
+
+/* --------------------------------------------------------------------------
+   Reset léger
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: ui-rounded, system-ui, sans-serif;
+  font-size: 1rem; /* 16 px minimum pour le corps du texte */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+p {
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
+  padding: 0;
+}
+
+/* L'attribut hidden l'emporte toujours sur les display des composants */
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Focus visible
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Les éléments qui reçoivent le focus par programme (titres d'écran, <main>)
+   n'affichent l'anneau qu'en navigation clavier. */
+[tabindex="-1"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   Mise en page générale : en-tête, contenu, zone du pouce
+   -------------------------------------------------------------------------- */
+.entete {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--hauteur-entete) + var(--sa-haut));
+  padding: var(--sa-haut) calc(var(--espace) + var(--sa-droite)) 0 calc(var(--espace) + var(--sa-gauche));
+  background: color-mix(in srgb, var(--fond) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.entete__marque {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--cible);
+  color: var(--texte);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--rayon-petit);
+}
+
+.entete__logo {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contenu {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding:
+    var(--espace)
+    calc(var(--espace) + var(--sa-droite))
+    /* Laisse la place à la barre d'onglets et au bouton flottant */
+    calc(var(--hauteur-onglets) + 88px + var(--sa-bas))
+    calc(var(--espace) + var(--sa-gauche));
+}
+
+/* En mode immersif (cuisine, édition), ni barre d'onglets ni bouton flottant */
+body[data-immersif] .contenu {
+  padding-bottom: calc(var(--espace) + var(--sa-bas));
+}
+
+/* Apparition douce de chaque écran */
+.ecran {
+  animation: apparition var(--duree) var(--courbe);
+}
+
+@keyframes apparition {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utilitaires
+   -------------------------------------------------------------------------- */
+
+/* Masque visuellement, mais reste lu par les lecteurs d'écran */
+.visuellement-cache {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.texte-doux {
+  color: var(--texte-doux);
+}
+
+/* Empile les enfants avec un espacement régulier */
+.pile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace);
+}
+
+/* Aligne les enfants sur une ligne, avec retour à la ligne */
+.rangee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Mouvement réduit : aucune animation ni transition
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
