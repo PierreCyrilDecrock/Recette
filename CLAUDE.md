@@ -65,6 +65,13 @@ docs/         cahier des charges et plan de développement
   `role="status"` dans `<body>`, elle survit au changement d'écran).
 - Confirmation d'une action destructrice : `<dialog>` modal (`showModal()`, `form method="dialog"`,
   focus sur Annuler) ; le focus est rendu au bouton qui a ouvert le menu.
+- Formulaire (E3, `edition.js`) : les saisies se lisent avec `lireQuantiteSaisie` (« 1,5 », « 1/2 »)
+  et `lireMinutesSaisie` (vide → `undefined`, invalide → `NaN`, que `validerRecette` refuse) ; les
+  quantités se réécrivent avec `formaterQuantiteSaisie`. Avant validation et enregistrement, la
+  recette passe par `nettoyerSaisie` (lignes vides retirées, textes nettoyés). Les champs non
+  affichés (`section`, `minuteur`, `favori`, `photo`, dates) sont conservés tels quels. Chaque
+  message d'erreur a l'id `edition-erreur-<champ>` (clé de `validerRecette`). Annuler et Enregistrer
+  remplacent l'entrée d'historique (`location.replace`) par la fiche, ou par la liste.
 - Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
   (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
   tel quel par la fiche et le mode cuisine.

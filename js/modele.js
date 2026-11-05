@@ -901,3 +901,98 @@ export function formaterRecetteTexte(recette, portions = recette?.portions) {
 
   return blocs.filter(Boolean).join('\n\n');
 }
+
+// ---------------------------------------------------------------------------
+// Formulaire (E3) : lecture des saisies et nettoyage avant enregistrement
+// ---------------------------------------------------------------------------
+
+/**
+ * Lit une quantité saisie dans le formulaire : « 2 », « 1,5 », « 1.5 », « 1/2 »,
+ * « 1 1/2 », « ½ », « 1 ½ ». Toute la saisie doit être une quantité.
+ * @param {string} texte
+ * @returns {number|undefined} undefined si le champ est vide, NaN si la saisie n'est
+ * pas une quantité (validerRecette la signale alors comme invalide)
+ */
+export function lireQuantiteSaisie(texte) {
+  const brut = String(texte ?? '').replace(/\s+/g, ' ').trim();
+  if (brut === '') return undefined;
+  for (const [motif, valeur] of MOTIFS_QUANTITE) {
+    const m = motif.exec(brut);
+    if (!m || m[0].length !== brut.length) continue;
+    const quantite = valeur(m);
+    return estNombre(quantite) ? nettoyerFlottant(quantite) : NaN;
+  }
+  return NaN;
+}
+
+/**
+ * Lit un nombre de minutes saisi dans le formulaire (chiffres uniquement).
+ * @param {string} texte ex. « 15 »
+ * @returns {number|undefined} undefined si le champ est vide, NaN si la saisie est invalide
+ */
+export function lireMinutesSaisie(texte) {
+  const brut = String(texte ?? '').trim();
+  if (brut === '') return undefined;
+  return /^\d+$/.test(brut) ? Number(brut) : NaN;
+}
+
+/**
+ * Écrit une quantité dans un champ du formulaire, sous une forme que lireQuantiteSaisie
+ * relit à l'identique : « 1,5 », « 0,25 », « 1/3 », « 1 2/3 ». Au-delà de 3 décimales
+ * (hors tiers), la valeur est arrondie au millième.
+ * @param {number} [quantite]
+ * @returns {string} '' si la quantité est absente ou invalide
+ */
+export function formaterQuantiteSaisie(quantite) {
+  if (!estNombre(quantite) || quantite < 0) return '';
+  const virgule = (nombre) => String(nettoyerFlottant(nombre)).replace('.', ',');
+  const milliemes = quantite * 1000;
+  if (Math.abs(milliemes - Math.round(milliemes)) < 1e-6) return virgule(Math.round(milliemes) / 1000);
+  const tiers = Math.round(quantite * 3);
+  if (Math.abs(quantite * 3 - tiers) < 1e-6) {
+    const entier = Math.floor(tiers / 3);
+    return `${entier > 0 ? `${entier} ` : ''}${tiers % 3}/3`;
+  }
+  return virgule(Math.round(milliemes) / 1000);
+}
+
+/**
+ * Prépare une recette saisie dans le formulaire pour l'enregistrement : textes sans
+ * espaces aux extrémités, lignes d'ingrédients et d'étapes vides retirées, champs
+ * facultatifs vides supprimés, catégories dédoublonnées. Renvoie une nouvelle recette.
+ * @param {Recette} recette
+ * @returns {Recette}
+ */
+export function nettoyerSaisie(recette) {
+  const propre = { ...recette };
+  for (const champ of ['titre', 'description', 'notes', 'source']) {
+    if (typeof propre[champ] === 'string') propre[champ] = propre[champ].trim();
+  }
+  for (const champ of CHAMPS_TEMPS) {
+    if (estAbsent(propre[champ])) delete propre[champ];
+  }
+  if (Array.isArray(propre.categories)) {
+    const noms = propre.categories.map((c) => (typeof c === 'string' ? c.trim() : c));
+    propre.categories = [...new Set(noms.filter((c) => c !== ''))];
+  }
+  if (Array.isArray(propre.ingredients)) {
+    propre.ingredients = propre.ingredients
+      .filter((ingredient) => !ingredientVide(ingredient))
+      .map((ingredient) => {
+        if (ingredient === null || typeof ingredient !== 'object') return ingredient;
+        const ligne = { ...ingredient };
+        for (const champ of ['nom', 'unite', 'precision', 'section']) {
+          if (typeof ligne[champ] === 'string') ligne[champ] = ligne[champ].trim();
+          if (champ !== 'nom' && estAbsent(ligne[champ])) delete ligne[champ];
+        }
+        if (estAbsent(ligne.quantite)) delete ligne.quantite;
+        return ligne;
+      });
+  }
+  if (Array.isArray(propre.etapes)) {
+    propre.etapes = propre.etapes
+      .filter((etape) => !(etape && typeof etape === 'object' && !estTexteRempli(etape.texte)))
+      .map((etape) => (typeof etape?.texte === 'string' ? { ...etape, texte: etape.texte.trim() } : etape));
+  }
+  return propre;
+}

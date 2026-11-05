@@ -26,6 +26,10 @@ import {
   lirePortions,
   urlSource,
   formaterRecetteTexte,
+  lireQuantiteSaisie,
+  lireMinutesSaisie,
+  formaterQuantiteSaisie,
+  nettoyerSaisie,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -841,5 +845,140 @@ describe('formaterRecetteTexte', () => {
   test('omet les blocs vides', () => {
     const texte = formaterRecetteTexte(recetteValide({ titre: 'Simple', portions: 1 }));
     assert.equal(texte, 'Simple\n\nPour 1 portion\n\nIngrédients\n- 3 poireaux\n\nÉtapes\n1. Faire fondre les poireaux.');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Formulaire (E3)
+// ---------------------------------------------------------------------------
+
+describe('lireQuantiteSaisie', () => {
+  test('accepte les entiers, décimales (virgule ou point) et fractions', () => {
+    assert.equal(lireQuantiteSaisie('200'), 200);
+    assert.equal(lireQuantiteSaisie('1,5'), 1.5);
+    assert.equal(lireQuantiteSaisie(' 1.5 '), 1.5);
+    assert.equal(lireQuantiteSaisie('1/2'), 0.5);
+    assert.equal(lireQuantiteSaisie('1 1/2'), 1.5);
+    assert.equal(lireQuantiteSaisie('½'), 0.5);
+    assert.equal(lireQuantiteSaisie('1 ½'), 1.5);
+    assert.equal(lireQuantiteSaisie('0'), 0);
+  });
+
+  test('un champ vide donne undefined', () => {
+    assert.equal(lireQuantiteSaisie(''), undefined);
+    assert.equal(lireQuantiteSaisie('   '), undefined);
+    assert.equal(lireQuantiteSaisie(undefined), undefined);
+  });
+
+  test('une saisie qui n’est pas une quantité donne NaN', () => {
+    for (const saisie of ['abc', '2 oeufs', '1/0', '-1', '1,5,2', '1 2', 'deux']) {
+      assert.ok(Number.isNaN(lireQuantiteSaisie(saisie)), saisie);
+    }
+  });
+
+  test('NaN est refusé par validerRecette', () => {
+    const recette = recetteValide({ ingredients: [{ quantite: lireQuantiteSaisie('abc'), nom: 'farine' }] });
+    assert.equal(validerRecette(recette).erreurs.ingredients, T.validation.quantite);
+  });
+});
+
+describe('lireMinutesSaisie', () => {
+  test('lit un nombre entier de minutes', () => {
+    assert.equal(lireMinutesSaisie('15'), 15);
+    assert.equal(lireMinutesSaisie(' 0 '), 0);
+    assert.equal(lireMinutesSaisie(''), undefined);
+  });
+
+  test('refuse décimales, signes et lettres (NaN)', () => {
+    for (const saisie of ['1,5', '-3', '10 min', 'abc']) {
+      assert.ok(Number.isNaN(lireMinutesSaisie(saisie)), saisie);
+    }
+    assert.equal(validerRecette(recetteValide({ tempsCuisson: lireMinutesSaisie('abc') })).erreurs.tempsCuisson, T.validation.temps(1440));
+  });
+});
+
+describe('formaterQuantiteSaisie', () => {
+  test('écrit les décimales avec une virgule', () => {
+    assert.equal(formaterQuantiteSaisie(200), '200');
+    assert.equal(formaterQuantiteSaisie(1.5), '1,5');
+    assert.equal(formaterQuantiteSaisie(0.25), '0,25');
+    assert.equal(formaterQuantiteSaisie(0.125), '0,125');
+  });
+
+  test('écrit les tiers en fraction', () => {
+    assert.equal(formaterQuantiteSaisie(1 / 3), '1/3');
+    assert.equal(formaterQuantiteSaisie(5 / 3), '1 2/3');
+  });
+
+  test('arrondit au millième au-delà', () => {
+    assert.equal(formaterQuantiteSaisie(1 / 7), '0,143');
+  });
+
+  test('renvoie une chaîne vide sans quantité valide', () => {
+    assert.equal(formaterQuantiteSaisie(undefined), '');
+    assert.equal(formaterQuantiteSaisie(Number.NaN), '');
+    assert.equal(formaterQuantiteSaisie(-1), '');
+  });
+
+  test('lireQuantiteSaisie relit ce qui a été écrit', () => {
+    for (const quantite of [0, 0.5, 1.5, 2.75, 200, 1 / 3, 2 / 3, 7 / 3]) {
+      assert.ok(Math.abs(lireQuantiteSaisie(formaterQuantiteSaisie(quantite)) - quantite) < 1e-9, String(quantite));
+    }
+  });
+});
+
+describe('nettoyerSaisie', () => {
+  test('retire les lignes vides d’ingrédients et d’étapes', () => {
+    const recette = nettoyerSaisie(recetteValide({
+      ingredients: [
+        { quantite: undefined, unite: '', nom: '', precision: '' },
+        { quantite: 200, unite: 'g', nom: ' farine ', precision: '' },
+        { quantite: undefined, unite: 'g', nom: '  ', precision: '' },
+        { quantite: undefined, unite: '', nom: 'sel', precision: ' fin ' },
+      ],
+      etapes: [{ texte: '  ' }, { texte: ' Mélanger. ' }, { texte: '' }],
+    }));
+    assert.deepEqual(recette.ingredients, [
+      { quantite: 200, unite: 'g', nom: 'farine' },
+      { nom: 'sel', precision: 'fin' },
+    ]);
+    assert.deepEqual(recette.etapes, [{ texte: 'Mélanger.' }]);
+  });
+
+  test('garde les champs non saisis dans le formulaire (section, minuteur)', () => {
+    const recette = nettoyerSaisie(recetteValide({
+      ingredients: [{ quantite: 1, unite: 'pièce', nom: 'pâte', section: 'Pour la pâte' }],
+      etapes: [{ texte: 'Cuire 15 min.', minuteur: 900 }],
+    }));
+    assert.equal(recette.ingredients[0].section, 'Pour la pâte');
+    assert.equal(recette.etapes[0].minuteur, 900);
+  });
+
+  test('nettoie les textes, les temps vides et les catégories', () => {
+    const source = recetteValide({
+      titre: '  Crêpes  ',
+      notes: ' Astuce ',
+      tempsPreparation: 10,
+      tempsCuisson: undefined,
+      tempsRepos: '',
+      categories: [' Dessert ', 'Dessert', '', 'Goûter'],
+    });
+    const recette = nettoyerSaisie(source);
+    assert.equal(recette.titre, 'Crêpes');
+    assert.equal(recette.notes, 'Astuce');
+    assert.equal(recette.tempsPreparation, 10);
+    assert.ok(!('tempsCuisson' in recette));
+    assert.ok(!('tempsRepos' in recette));
+    assert.deepEqual(recette.categories, ['Dessert', 'Goûter']);
+    // La recette d'origine n'est pas modifiée
+    assert.equal(source.titre, '  Crêpes  ');
+    assert.equal(validerRecette(recette).valide, true);
+  });
+
+  test('une recette sans ligne remplie reste invalide', () => {
+    const recette = nettoyerSaisie(recetteValide({ ingredients: [{ nom: '' }], etapes: [{ texte: ' ' }] }));
+    const { erreurs } = validerRecette(recette);
+    assert.equal(erreurs.ingredients, T.validation.ingredientsObligatoires);
+    assert.equal(erreurs.etapes, T.validation.etapesObligatoires);
   });
 });

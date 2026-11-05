@@ -84,6 +84,8 @@ for (const largeur of [360, 1024]) {
 
     test('ingrédients et étapes en une colonne sur mobile, deux à partir de 768 px', async ({ page }) => {
       await ouvrirFiche(page, 'exemple-tarte-poireaux');
+      // Les deux mesures doivent suivre la fin de l'animation d'apparition de l'écran
+      await page.locator('.fiche').evaluate((fiche) => Promise.all(fiche.getAnimations().map((a) => a.finished)));
       const ingredients = await page.locator('.fiche__ingredients').boundingBox();
       const etapes = await page.locator('.fiche__etapes').boundingBox();
       if (largeur >= 768) {

@@ -200,6 +200,36 @@ textarea.champ__saisie {
   outline-offset: 0;
 }
 
+.champ__obligatoire {
+  color: var(--texte-doux);
+  font-weight: 400;
+}
+
+/* Pied d'un champ : aide à gauche, compteur à droite */
+.champ__pied {
+  display: flex;
+  gap: 8px;
+}
+
+/* Saisie suivie d'une unité (« min ») affichée dans le champ */
+.saisie-unite {
+  position: relative;
+}
+
+.saisie-unite .champ__saisie {
+  padding-inline-end: 2.75rem;
+}
+
+.saisie-unite__unite {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 12px;
+  display: flex;
+  align-items: center;
+  color: var(--texte-doux);
+  pointer-events: none;
+}
+
 .champ__aide {
   color: var(--texte-doux);
   font-size: 0.9375rem;

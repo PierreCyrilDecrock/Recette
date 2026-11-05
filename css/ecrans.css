@@ -418,6 +418,217 @@
 /* --------------------------------------------------------------------------
    E3 — Création et modification (js/ecrans/edition.js)
    -------------------------------------------------------------------------- */
+.edition {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
+.edition__formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace);
+}
+
+.edition__section-titre {
+  font-size: 1.25rem;
+}
+
+.edition__section fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.edition__section fieldset > legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+/* Description : compteur de caractères aligné à droite sous le champ */
+.edition__compteur {
+  margin-inline-start: auto;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.edition__compteur--depasse {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Temps : trois champs côte à côte, même à 360 px */
+.edition__temps-grille {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.edition__temps-libelle {
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.edition__temps .champ__erreur {
+  margin-top: 6px;
+}
+
+.edition__portions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Catégories : puces sur plusieurs lignes, puis le champ de création */
+.edition__categories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edition__puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.edition__puces:empty {
+  display: none;
+}
+
+.edition__nouvelle-categorie {
+  display: flex;
+  gap: 8px;
+}
+
+.edition__nouvelle-categorie .champ__saisie {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Lignes d'ingrédients et d'étapes */
+.edition__lignes {
+  display: flex;
+  flex-direction: column;
+}
+
+.ligne {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.ligne:first-child {
+  padding-top: 0;
+}
+
+.ligne__supprimer {
+  color: var(--texte-doux);
+}
+
+.ligne__supprimer:hover {
+  color: var(--danger);
+}
+
+/* Ingrédient à 360 px : quantité, unité, nom ; puis précision et suppression */
+.ligne-ingredient {
+  display: grid;
+  grid-template-columns: 3.5rem 5.5rem minmax(0, 1fr) var(--cible);
+  grid-template-areas:
+    "quantite unite nom nom"
+    "precision precision precision supprimer";
+  gap: 8px;
+  align-items: center;
+}
+
+.ligne-ingredient .champ__saisie {
+  padding-inline: 8px;
+}
+
+.ligne-ingredient__quantite { grid-area: quantite; }
+.ligne-ingredient__unite { grid-area: unite; }
+.ligne-ingredient__nom { grid-area: nom; }
+.ligne-ingredient__precision { grid-area: precision; }
+.ligne-ingredient .ligne__supprimer { grid-area: supprimer; }
+
+/* Étape : numéro, texte auto-redimensionné, suppression */
+.ligne-etape {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) var(--cible);
+  gap: 8px;
+  align-items: start;
+}
+
+.ligne-etape__numero {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--sur-accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ligne-etape textarea.champ__saisie {
+  min-height: 4.5rem;
+  resize: none;
+  overflow: hidden;
+}
+
+.edition__ajouter {
+  align-self: flex-start;
+}
+
+/* Barre d'actions : collée en bas de l'écran, dans la zone du pouce */
+.edition__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  gap: 10px;
+  margin-inline: calc(-1 * var(--espace));
+  margin-bottom: calc(-1 * (var(--espace) + var(--sa-bas)));
+  padding: 12px var(--espace) calc(12px + var(--sa-bas));
+  border-top: 1px solid var(--bordure);
+  background: color-mix(in srgb, var(--fond) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.edition__actions .bouton {
+  flex: 1;
+  min-height: 52px;
+}
+
+.edition__actions .bouton--principal {
+  flex: 2;
+}
+
+/* Les messages éphémères s'affichent au-dessus de la barre d'actions, sans la masquer */
+body:has(.edition__actions) .toasts {
+  bottom: calc(var(--sa-bas) + 77px + 8px);
+}
+
+@media (min-width: 768px) {
+  /* Ingrédient sur une seule ligne */
+  .ligne-ingredient {
+    grid-template-columns: 5rem 6.5rem minmax(0, 2fr) minmax(0, 1.5fr) var(--cible);
+    grid-template-areas: "quantite unite nom precision supprimer";
+  }
+
+  .edition__actions {
+    margin-inline: 0;
+    border: 1px solid var(--bordure);
+    border-bottom: 0;
+    border-radius: var(--rayon) var(--rayon) 0 0;
+  }
+}
+
 
 /* --------------------------------------------------------------------------
    E4 — Mode cuisine (js/ecrans/cuisine.js)

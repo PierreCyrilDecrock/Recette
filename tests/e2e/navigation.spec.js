@@ -75,9 +75,9 @@ test('les routes à paramètre transmettent leur identifiant et leur requête', 
   await page.getByRole('link', { name: 'Quitter le mode cuisine' }).click();
   await expect(page).toHaveURL(/#\/recette\/tarte%20aux%20poireaux\?portions=6$/);
 
+  // Identifiant inconnu : l'édition l'annonce, sans afficher le formulaire
   await page.goto('./#/edition/42');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Modifier la recette');
-  await expect(page.locator('.parametres dd')).toHaveText('42');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recette introuvable');
   await expect(page.locator('.barre-onglets')).toBeHidden();
 });
 
