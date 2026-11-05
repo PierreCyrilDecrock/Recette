@@ -48,6 +48,10 @@ docs/         cahier des charges et plan de développement
   les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + ».
 - Les libellés de `index.html` portent `data-texte` / `data-texte-aria` (chemin dans `T`) :
   `app.js` les remplace au démarrage.
+- Données : passer uniquement par `js/db.js` (jamais d'IndexedDB direct dans les écrans). Ses erreurs
+  sont des `ErreurStockage` (`code`, `message` tiré de `T.stockage`, affichable tel quel) ;
+  `ErreurValidation` porte en plus `erreurs` (`{ champ: message }`, à afficher sous chaque champ).
+  Le champ technique `indexFavori` (index `favori`) n'existe qu'en base, jamais dans les recettes renvoyées.
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
 - Code commenté en français ; noms de variables et de fonctions en français, alignés sur le
   modèle de données (`titre`, `portions`, `tempsPreparation`, `etapes`…).

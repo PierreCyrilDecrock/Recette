@@ -82,6 +82,21 @@ export const T = {
     minuteur: 'La durée d’un minuteur doit être un nombre entier de secondes.',
   },
 
+  // Erreurs du stockage local (db.js), affichées telles quelles à l'utilisateur
+  stockage: {
+    indisponible: 'Le stockage local n’est pas disponible dans ce navigateur (navigation privée ?). Vos recettes ne peuvent pas être enregistrées.',
+    bloquee: 'La base de recettes est bloquée par un autre onglet. Fermez les autres onglets de l’application, puis réessayez.',
+    version: 'Les données ont été enregistrées par une version plus récente de l’application. Rechargez la page.',
+    quota: 'L’espace de stockage est plein. Supprimez des photos ou des recettes, puis réessayez.',
+    generique: 'L’enregistrement a échoué. Réessayez dans un instant.',
+    recetteInvalide: 'La recette contient des erreurs et n’a pas été enregistrée.',
+    recetteInconnue: 'Cette recette n’existe pas ou a été supprimée.',
+    categorieVide: 'Donnez un nom à la catégorie.',
+    categorieInconnue: 'Cette catégorie n’existe pas.',
+    importInvalide: 'Ce fichier ne contient pas de recettes au format attendu.',
+    modeImport: 'Mode d’import inconnu : choisissez « fusionner » ou « remplacer ».',
+  },
+
   // Unités des durées affichées (modele.js → formaterDuree) : « 1 h 15 », « 2 j 3 h »
   duree: {
     minutes: 'min',
