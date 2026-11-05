@@ -1063,3 +1063,49 @@ export function decouperLignesCollees(texte, { paragraphes = false } = {}) {
   }
   return blocs.filter((bloc) => bloc !== '');
 }
+
+// ---------------------------------------------------------------------------
+// Mode cuisine (E4) : étape demandée et geste de balayage
+// ---------------------------------------------------------------------------
+
+/** Valeur du paramètre « etape » pour l'écran de fin (« Bon appétit ! »). */
+export const ETAPE_FIN = 'fin';
+
+/**
+ * Lit l'étape demandée dans l'URL (« ?etape=3 », « ?etape=fin »).
+ * @param {unknown} valeur paramètre de requête (chaîne), absent pour la première étape
+ * @param {number} total nombre d'étapes de la recette
+ * @returns {number|'fin'} numéro de 1 à total, ou ETAPE_FIN ; 1 si la valeur est invalide
+ */
+export function lireEtape(valeur, total) {
+  if (valeur === ETAPE_FIN) return ETAPE_FIN;
+  const texte = String(valeur ?? '').trim();
+  if (!/^\d{1,4}$/.test(texte)) return 1;
+  const numero = Number(texte);
+  return numero >= 1 && numero <= total ? numero : 1;
+}
+
+/** Seuils du balayage : distance (px, ou part de la largeur) et vitesse (px/ms). */
+export const SEUILS_GLISSEMENT = Object.freeze({
+  distance: 60,
+  partLargeur: 0.25,
+  vitesse: 0.5,
+  distanceRapide: 30,
+});
+
+/**
+ * Décide si un balayage horizontal change d'étape : assez long (60 px et un quart de la
+ * largeur), ou assez rapide (0,5 px/ms sur au moins 30 px).
+ * @param {{ dx: number, duree: number, largeur: number }} geste dx : déplacement horizontal
+ *   (négatif vers la gauche), duree en ms, largeur de la zone en px
+ * @returns {-1|0|1} 1 : étape suivante (balayage vers la gauche), -1 : précédente, 0 : aucune
+ */
+export function sensGlissement({ dx, duree, largeur }) {
+  if (!estNombre(dx) || dx === 0) return 0;
+  const S = SEUILS_GLISSEMENT;
+  const distance = Math.abs(dx);
+  const longueur = distance >= Math.max(S.distance, (estNombre(largeur) ? largeur : 0) * S.partLargeur);
+  const rapide = distance >= S.distanceRapide && estNombre(duree) && duree > 0 && distance / duree >= S.vitesse;
+  if (!longueur && !rapide) return 0;
+  return dx < 0 ? 1 : -1;
+}

@@ -1,7 +1,10 @@
 // Démarrage de l'application et routeur par hash.
 // Chaque route charge son écran par import() dynamique ; un écran exporte
 // afficher(conteneur, params), qui peut renvoyer une fonction de nettoyage.
-// Cette fonction peut porter une garde de sortie, confirmerSortie() → true | Promise<boolean> :
+// Elle peut porter mettreAJour(params) → boolean : quand seule la requête du hash change sur le
+// même écran (même route, mêmes paramètres du motif), le routeur la lui passe ; true évite de
+// reconstruire l'écran (ex. #/cuisine/42?etape=3 → ?etape=4). Le focus ne bouge pas.
+// Elle peut aussi porter une garde de sortie, confirmerSortie() → true | Promise<boolean> :
 // true laisse partir tout de suite ; sinon le routeur revient à l'URL de l'écran, attend la
 // réponse, puis rejoue la navigation (lien, bouton retour ou avance) si elle est acceptée.
 
@@ -39,11 +42,18 @@ let numeroNavigation = 0;
 // Le premier affichage ne déplace pas le focus (la page vient de s'ouvrir)
 let premierAffichage = true;
 
+// Route et paramètres de l'écran affiché (mise à jour sur place)
+let routeCourante = null;
+let paramsCourants = null;
+
 // Garde de sortie : hash et position dans l'historique de l'écran affiché
 let hashCourant = null;
 let positionCourante = 0;
-// Retour à l'écran courant demandé par la garde : le hashchange qui suit est ignoré
-let retourEnCours = false;
+// Retour à l'écran courant demandé par la garde : fonction appelée quand il est fait
+// (le hashchange correspondant est alors ignoré)
+let finRetour = null;
+// Délai au-delà duquel on n'attend plus ce hashchange (ms)
+const DELAI_RETOUR = 1000;
 // Navigation acceptée par la garde : elle ne la consulte pas une seconde fois
 let sortieAcceptee = false;
 
@@ -133,6 +143,7 @@ function afficherErreur() {
 /**
  * Mémorise la position de l'entrée d'historique courante dans son état : elle permet
  * de savoir de combien d'entrées le navigateur s'est déplacé (retour, avance, lien).
+ * Sans effet sur une entrée déjà marquée (appels répétés sans risque).
  */
 function marquerPosition() {
   const position = history.state?.position;
@@ -146,9 +157,12 @@ function marquerPosition() {
  * @returns {boolean} vrai si la navigation peut continuer tout de suite
  */
 function consulterGarde() {
-  if (retourEnCours) {
-    retourEnCours = false;
-    if (location.hash === hashCourant) return false; // retour à l'écran gardé : rien à faire
+  if (finRetour && location.hash === hashCourant) {
+    // Retour à l'écran gardé : rien à afficher
+    const terminer = finRetour;
+    finRetour = null;
+    terminer();
+    return false;
   }
   if (sortieAcceptee) {
     sortieAcceptee = false;
@@ -170,11 +184,18 @@ function consulterGarde() {
   const cible = location.hash;
   const position = history.state?.position;
   const ecart = Number.isInteger(position) ? position - positionCourante : 1;
-  retourEnCours = true;
+  const retourFait = new Promise((resoudre) => {
+    finRetour = resoudre;
+    setTimeout(() => {
+      if (finRetour === resoudre) finRetour = null;
+      resoudre();
+    }, DELAI_RETOUR);
+  });
   if (ecart !== 0) history.go(-ecart);
   else location.replace(hashCourant);
-  Promise.resolve(reponse)
-    .then((accepte) => {
+  // On ne rejoue le déplacement qu'une fois revenu à l'écran gardé
+  Promise.all([reponse, retourFait])
+    .then(([accepte]) => {
       if (!accepte) return;
       // On rejoue le déplacement d'origine
       sortieAcceptee = true;
@@ -183,6 +204,26 @@ function consulterGarde() {
     })
     .catch((erreur) => console.error(erreur));
   return false;
+}
+
+/**
+ * Même écran, mêmes paramètres du motif, autre requête : l'écran se met à jour lui-même
+ * s'il sait le faire (mettreAJour renvoie true).
+ * @returns {boolean} vrai si l'écran a été mis à jour sans être reconstruit
+ */
+function mettreAJourSurPlace(route, params) {
+  const mettreAJour = nettoyageCourant?.mettreAJour;
+  if (route !== routeCourante || typeof mettreAJour !== 'function') return false;
+  if ((route.cles ?? []).some((cle) => params[cle] !== paramsCourants[cle])) return false;
+  try {
+    if (mettreAJour(params) !== true) return false;
+  } catch (erreur) {
+    console.error(erreur);
+    return false;
+  }
+  paramsCourants = params;
+  marquerPosition();
+  return true;
 }
 
 /** Affiche l'écran correspondant au hash courant. */
@@ -198,6 +239,8 @@ async function naviguer() {
   const numero = ++numeroNavigation;
   const { route, params } = resolution;
 
+  if (mettreAJourSurPlace(route, params)) return;
+
   try {
     const module = await import(`./ecrans/${route.ecran}.js`);
     // Une autre navigation a commencé pendant le chargement : on l'ignore
@@ -206,6 +249,8 @@ async function naviguer() {
     nettoyer();
     mettreAJourCoquille(route);
     conteneur.replaceChildren();
+    // La position est notée avant l'affichage : l'écran peut la lire dans history.state
+    marquerPosition();
     const nettoyage = await module.afficher(conteneur, params);
     if (numero !== numeroNavigation) {
       // L'écran a fini de s'afficher alors qu'on l'a déjà quitté
@@ -213,12 +258,14 @@ async function naviguer() {
       return;
     }
     nettoyageCourant = nettoyage ?? null;
-    marquerPosition();
+    routeCourante = route;
+    paramsCourants = params;
     annoncerEcran();
   } catch (erreur) {
     console.error(erreur);
     if (numero !== numeroNavigation) return;
     nettoyer();
+    routeCourante = null;
     mettreAJourCoquille(route);
     afficherErreur();
     marquerPosition();

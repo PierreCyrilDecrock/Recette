@@ -801,6 +801,127 @@ textarea.champ__saisie {
 }
 
 /* --------------------------------------------------------------------------
+   Bulle (popover) : précision affichée près d'un bouton, placée par JS
+   -------------------------------------------------------------------------- */
+.bulle {
+  position: fixed;
+  inset: auto;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 16px));
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--texte);
+  box-shadow: 0 10px 30px var(--ombre), 0 2px 6px var(--ombre);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Sans l'API Popover : bascule par l'attribut hidden (voir [hidden] dans base.css) */
+.bulle[popover]:not(:popover-open) {
+  display: none;
+}
+
+.bulle__nom {
+  font-size: 1.0625rem;
+}
+
+.bulle__quantite {
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.bulle__quantite--libre {
+  color: var(--texte-doux);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bulle__precision {
+  color: var(--texte-doux);
+}
+
+/* --------------------------------------------------------------------------
+   Panneau qui monte du bas (« bottom sheet », <dialog> modal)
+   -------------------------------------------------------------------------- */
+.panneau {
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(85dvh, 100% - 48px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--rayon) var(--rayon) 0 0;
+  background: var(--surface);
+  color: var(--texte);
+  box-shadow: 0 -10px 40px var(--ombre);
+}
+
+.panneau[open] {
+  animation: montee-panneau var(--duree) var(--courbe);
+}
+
+.panneau::backdrop {
+  background: rgb(20 10 5 / 0.45);
+}
+
+@keyframes montee-panneau {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.panneau__corps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px var(--espace) calc(var(--espace) + var(--sa-bas));
+}
+
+/* Petite barre qui signale un panneau */
+.panneau__corps::before {
+  content: "";
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--bordure);
+}
+
+.panneau__entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panneau__titre {
+  font-size: 1.375rem;
+}
+
+.panneau__liste {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .panneau {
+    inset-inline: 0;
+    max-width: 36rem;
+    margin-inline: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
    Dialogue de confirmation (<dialog> modal)
    -------------------------------------------------------------------------- */
 .dialogue {

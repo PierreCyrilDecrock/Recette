@@ -32,6 +32,9 @@ import {
   nettoyerSaisie,
   composerLigneIngredient,
   decouperLignesCollees,
+  lireEtape,
+  ETAPE_FIN,
+  sensGlissement,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -1061,5 +1064,52 @@ describe('composerLigneIngredient', () => {
     for (const ingredient of ingredients) {
       assert.deepEqual(analyserLigneIngredient(composerLigneIngredient(ingredient)), ingredient);
     }
+  });
+});
+
+describe('lireEtape', () => {
+  test('lit un numéro d’étape valide', () => {
+    assert.equal(lireEtape('3', 5), 3);
+    assert.equal(lireEtape('1', 5), 1);
+    assert.equal(lireEtape('5', 5), 5);
+    assert.equal(lireEtape(' 2 ', 5), 2);
+  });
+
+  test('reconnaît l’écran de fin', () => {
+    assert.equal(lireEtape('fin', 5), ETAPE_FIN);
+  });
+
+  test('revient à la première étape si la valeur est absente ou invalide', () => {
+    for (const valeur of [undefined, '', '0', '6', '-1', '2.5', 'deux', 'FIN']) {
+      assert.equal(lireEtape(valeur, 5), 1, String(valeur));
+    }
+  });
+});
+
+describe('sensGlissement', () => {
+  test('un balayage long change d’étape, dans le bon sens', () => {
+    assert.equal(sensGlissement({ dx: -120, duree: 600, largeur: 360 }), 1);
+    assert.equal(sensGlissement({ dx: 120, duree: 600, largeur: 360 }), -1);
+  });
+
+  test('un balayage court et lent ne change rien', () => {
+    assert.equal(sensGlissement({ dx: -50, duree: 400, largeur: 360 }), 0);
+    assert.equal(sensGlissement({ dx: 0, duree: 100, largeur: 360 }), 0);
+  });
+
+  test('la distance tient compte de la largeur (un quart)', () => {
+    assert.equal(sensGlissement({ dx: -150, duree: 1000, largeur: 800 }), 0);
+    assert.equal(sensGlissement({ dx: -200, duree: 1000, largeur: 800 }), 1);
+  });
+
+  test('un geste rapide suffit, au-delà de 30 px', () => {
+    assert.equal(sensGlissement({ dx: -40, duree: 50, largeur: 360 }), 1);
+    assert.equal(sensGlissement({ dx: 40, duree: 50, largeur: 360 }), -1);
+    assert.equal(sensGlissement({ dx: -20, duree: 10, largeur: 360 }), 0);
+  });
+
+  test('valeurs invalides : aucun changement', () => {
+    assert.equal(sensGlissement({ dx: Number.NaN, duree: 100, largeur: 360 }), 0);
+    assert.equal(sensGlissement({ dx: -50, duree: 0, largeur: 360 }), 0);
   });
 });

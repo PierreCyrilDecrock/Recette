@@ -30,7 +30,8 @@ js/
   exemples.js   recettes d'exemple
   icones.js     icônes SVG en ligne
   ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
-  composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js
+  composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js,
+                liste-ingredients.js
 icones/       icônes de l'app (PWA)
 tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
 docs/         cahier des charges et plan de développement
@@ -45,13 +46,22 @@ docs/         cahier des charges et plan de développement
   (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…). Cette fonction peut
   porter une garde `confirmerSortie()` : elle renvoie `true` (partir tout de suite) ou une
   `Promise<boolean>`. Le routeur revient alors à l'URL de l'écran, attend la réponse, puis rejoue
-  la navigation (lien, retour ou avance) ; il note pour cela `position` dans `history.state`.
+  la navigation (lien, retour ou avance) ; il note pour cela `position` dans `history.state`,
+  avant d'appeler `afficher` (l'écran peut donc la lire). Elle peut aussi porter
+  `mettreAJour(params)` : quand seule la requête change sur le même écran (même route, mêmes
+  paramètres du motif), le routeur la lui passe ; `true` évite de reconstruire l'écran.
 - Routage (`js/app.js`, table `ROUTES`) : `#/favoris` réutilise `liste.js` (`params.favoris`),
   `#/nouvelle` réutilise `edition.js` (sans `id`). Le routeur donne le focus au `<h1>` de l'écran ;
   les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + » ;
   `sansAjout` (fiche) masque seulement le « + », remplacé par la barre d'actions de l'écran.
   Les paramètres de requête du hash arrivent en chaînes dans `params` (`#/cuisine/:id?portions=6`
   → `params.portions`, à lire avec `lirePortions`) ; ceux du motif l'emportent.
+- Mode cuisine (E4, `cuisine.js`) : `#/cuisine/:id?portions=N&etape=K` (`etape` omis pour la
+  première, `fin` pour « Bon appétit ! », lu par `lireEtape`). Chaque changement d'étape est une
+  entrée d'historique (le retour du navigateur recule d'une étape), traitée par `mettreAJour`.
+  Quitter revient d'abord à l'entrée de départ (`history.go`), puis la remplace par la fiche
+  (`?portions=N` si les portions venaient de l'URL). Balayage décidé par `sensGlissement` ;
+  écran allumé par `navigator.wakeLock`, redemandé à `visibilitychange`, libéré au nettoyage.
 - Les libellés de `index.html` portent `data-texte` / `data-texte-aria` (chemin dans `T`) :
   `app.js` les remplace au démarrage.
 - Données : passer uniquement par `js/db.js` (jamais d'IndexedDB direct dans les écrans). Ses erreurs
@@ -87,6 +97,11 @@ docs/         cahier des charges et plan de développement
   `js/composants/liste-lignes.js` (poignée en Pointer Events, menu de ligne Monter / Descendre /
   actions propres / Supprimer, annonce aria-live, événement `EVENEMENT_LIGNES`). On déplace la
   voisine plutôt que la ligne tenue : elle garde ainsi son focus et sa capture du pointeur.
+- Liste d'ingrédients affichée (fiche, panneau du mode cuisine) : `creerListeIngredients(ingredients)`
+  de `js/composants/liste-ingredients.js` (quantités déjà mises à l'échelle, sections en `<h3>`).
+- Bulle d'information : `<span class="bulle" popover="auto">` placée juste après son bouton
+  (`popoverTargetElement`, ordre de lecture conservé), positionnée en JS à l'ouverture ; repli sur
+  `hidden` sans l'API Popover. Panneau qui monte du bas : `<dialog class="panneau">` en `showModal()`.
 - Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
   (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
   tel quel par la fiche et le mode cuisine.

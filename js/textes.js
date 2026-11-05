@@ -239,6 +239,31 @@ export const T = {
   cuisine: {
     titre: 'Mode cuisine',
     quitter: 'Quitter le mode cuisine',
+    // Progression : « Étape 3 / 8 »
+    progression: (numero, total) => `Étape ${numero} / ${total}`,
+    progressionFin: 'Terminé',
+    etape: (numero, total) => `Étape ${numero} sur ${total}`,
+    // Navigation entre les étapes
+    navigation: 'Navigation entre les étapes',
+    precedent: 'Précédent',
+    suivant: 'Suivant',
+    termine: 'Terminé',
+    // Ingrédients cités (bulle) et panneau
+    ingredients: 'Ingrédients',
+    pourPortions: (nombre) => `Pour ${nombre} ${nombre > 1 ? 'portions' : 'portion'}`,
+    selonGout: 'Quantité selon votre goût',
+    fermer: 'Fermer',
+    // Écran maintenu allumé (Wake Lock)
+    veilleIndisponible: 'Ce navigateur ne peut pas garder l’écran allumé : touchez-le de temps en temps.',
+    // Fin de la recette
+    finTitre: 'Bon appétit !',
+    finTexte: 'Toutes les étapes sont terminées.',
+    revenirFiche: 'Revenir à la fiche',
+    // Identifiant inconnu ou base illisible
+    introuvableTitre: 'Recette introuvable',
+    introuvableTexte: 'Cette recette n’existe pas ou a été supprimée.',
+    erreurTitre: 'Recette indisponible',
+    voirRecettes: 'Voir mes recettes',
   },
 
   // E5 — Réglages

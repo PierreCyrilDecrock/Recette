@@ -718,6 +718,202 @@ body:has(.edition__actions) .toasts {
    E4 — Mode cuisine (js/ecrans/cuisine.js)
    -------------------------------------------------------------------------- */
 
+/* Plein écran : ni en-tête de l'app, ni barre d'onglets */
+body:has(.cuisine) .entete {
+  display: none;
+}
+
+.cuisine {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 48rem;
+  min-height: calc(100dvh - 2 * var(--espace) - var(--sa-bas));
+  margin-inline: auto;
+  padding-top: var(--sa-haut);
+}
+
+.cuisine__entete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cuisine__titre {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cuisine__fermer {
+  border: 1px solid var(--bordure);
+  background: var(--surface);
+}
+
+.cuisine__bouton-ingredients {
+  padding-inline: 14px;
+  border-width: 1px;
+}
+
+/* Progression « Étape 3 / 8 » */
+.cuisine__progression {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cuisine__progression-texte {
+  white-space: nowrap;
+}
+
+.cuisine__barre {
+  flex: 1;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bordure);
+  color: var(--accent);
+  appearance: none;
+  -webkit-appearance: none;
+  overflow: hidden;
+}
+
+.cuisine__barre::-webkit-progress-bar {
+  background: var(--bordure);
+  border-radius: 999px;
+}
+
+.cuisine__barre::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width var(--duree) var(--courbe);
+}
+
+.cuisine__barre::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.cuisine__veille {
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* Scène : seul le défilement vertical revient au navigateur ; le balayage horizontal est à nous */
+.cuisine__scene {
+  flex: 1;
+  display: flex;
+  overflow-x: clip;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Carte d'une étape : texte en grand (22 px minimum), contraste élevé */
+.cuisine__carte {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(20px, 4vw, 40px);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--ombre);
+  color: var(--texte);
+}
+
+.cuisine__carte--suivie {
+  cursor: grabbing;
+}
+
+.cuisine__texte {
+  font-size: clamp(1.375rem, 1.1rem + 1.25vw, 2.125rem);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* Ingrédient cité : bouton dans le texte, souligné et teinté */
+.cuisine__ingredient {
+  display: inline;
+  margin: 0;
+  padding: 0.05em 0.2em;
+  border: 0;
+  border-bottom: 3px solid var(--accent);
+  border-radius: 6px 6px 0 0;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--texte);
+  font: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color var(--duree) var(--courbe);
+}
+
+.cuisine__ingredient:hover,
+.cuisine__ingredient[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--accent) 26%, var(--surface));
+}
+
+/* Fin : « Bon appétit ! » */
+.cuisine__carte--fin {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.cuisine__fin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espace);
+}
+
+.cuisine__fin-titre {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  color: var(--accent);
+}
+
+.cuisine__fin-texte {
+  font-size: 1.25rem;
+}
+
+/* Précédent / Suivant : larges, en bas, dans la zone du pouce */
+.cuisine__navigation {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  gap: 12px;
+  margin-inline: calc(-1 * var(--espace));
+  margin-bottom: calc(-1 * (var(--espace) + var(--sa-bas)));
+  padding: 12px var(--espace) calc(12px + var(--sa-bas));
+  background: var(--fond);
+}
+
+.cuisine__navigation .bouton {
+  flex: 1;
+  min-height: 60px;
+  font-size: 1.125rem;
+}
+
+.cuisine__suivant {
+  flex: 1.6 !important;
+}
+
+@media (min-width: 768px) {
+  .cuisine__navigation {
+    margin-inline: 0;
+  }
+}
+
+
 /* --------------------------------------------------------------------------
    E5 — Réglages (js/ecrans/reglages.js)
    -------------------------------------------------------------------------- */

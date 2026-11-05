@@ -69,8 +69,8 @@ for (const largeur of [360, 1024]) {
       const cuisiner = page.getByRole('link', { name: 'Cuisiner' });
       await expect(cuisiner).toHaveAttribute('href', '#/cuisine/exemple-veloute-potimarron?portions=6');
       await cuisiner.click();
-      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mode cuisine');
-      await page.getByRole('link', { name: 'Quitter le mode cuisine' }).click();
+      await expect(page.locator('.cuisine')).toBeVisible();
+      await page.getByRole('button', { name: 'Quitter le mode cuisine' }).click();
       await expect(valeurPortions(page)).toHaveText('6 portions');
 
       // La valeur choisie n'est pas enregistrée dans la recette

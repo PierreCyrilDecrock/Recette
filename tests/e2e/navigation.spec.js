@@ -66,14 +66,16 @@ test('les routes à paramètre transmettent leur identifiant et leur requête', 
   // La fiche n'est pas un onglet : aucun n'est actif
   await expect(page.locator('.barre-onglets [aria-current]')).toHaveCount(0);
 
+  // Les paramètres de requête arrivent en chaînes, avec ceux du motif (écran provisoire des réglages)
+  await page.goto('./#/reglages?section=theme');
+  await expect(page.locator('.parametres dt')).toHaveText(['section']);
+  await expect(page.locator('.parametres dd')).toHaveText(['theme']);
+
+  // Mode cuisine : immersif, même pour un identifiant inconnu
   await page.goto('./#/cuisine/tarte%20aux%20poireaux?portions=6');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mode cuisine');
-  await expect(page.locator('.parametres dt')).toHaveText(['portions', 'id']);
-  await expect(page.locator('.parametres dd')).toHaveText(['6', 'tarte aux poireaux']);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recette introuvable');
   await expect(page.locator('.barre-onglets')).toBeHidden();
   await expect(page.locator('.bouton-flottant')).toBeHidden();
-  await page.getByRole('link', { name: 'Quitter le mode cuisine' }).click();
-  await expect(page).toHaveURL(/#\/recette\/tarte%20aux%20poireaux\?portions=6$/);
 
   // Identifiant inconnu : l'édition l'annonce, sans afficher le formulaire
   await page.goto('./#/edition/42');

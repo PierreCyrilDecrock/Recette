@@ -6,10 +6,11 @@
 import { T } from '../textes.js';
 import { basculerFavori, enregistrerRecette, lireRecette, supprimerRecette } from '../db.js';
 import {
-  DIFFICULTES, dupliquerRecette, formaterDuree, formaterQuantite, formaterRecetteTexte,
+  DIFFICULTES, dupliquerRecette, formaterDuree, formaterRecetteTexte,
   lirePortions, mettreALEchelle, tempsTotal, urlSource,
 } from '../modele.js';
 import { creerDifficulte, creerVisuel } from '../composants/carte-recette.js';
+import { creerListeIngredients } from '../composants/liste-ingredients.js';
 import { EVENEMENT_PORTIONS, creerSelecteurPortions } from '../composants/selecteur-portions.js';
 import { afficherToast } from '../composants/toast.js';
 
@@ -135,21 +136,7 @@ export async function afficher(conteneur, params) {
   /** Recalcule et affiche les ingrédients pour le nombre de portions choisi. */
   function rendreIngredients() {
     const ingredients = mettreALEchelle(recette.ingredients, recette.portions, selecteur.valeur);
-    const morceaux = [];
-    let liste = null;
-    let sectionCourante = '';
-    for (const ingredient of ingredients) {
-      const nomSection = rempli(ingredient.section) ? ingredient.section.trim() : '';
-      if (!liste || nomSection !== sectionCourante) {
-        if (nomSection) morceaux.push(element('h3', 'ingredients__section', nomSection));
-        liste = element('ul', 'ingredients');
-        liste.setAttribute('role', 'list');
-        morceaux.push(liste);
-        sectionCourante = nomSection;
-      }
-      liste.append(creerLigneIngredient(ingredient));
-    }
-    listeIngredients.replaceChildren(...morceaux);
+    listeIngredients.replaceChildren(...creerListeIngredients(ingredients));
   }
 
   // --- Étapes ---------------------------------------------------------------------------
@@ -353,18 +340,6 @@ function creerBloc(nom, titre, outil) {
     bloc.append(h2);
   }
   return bloc;
-}
-
-/** Ligne d'ingrédient : quantité et unité en gras, nom, précision en gris. */
-function creerLigneIngredient(ingredient) {
-  const item = element('li', 'ingredient');
-  const quantite = formaterQuantite(ingredient.quantite, ingredient.unite);
-  if (quantite) item.append(element('strong', 'ingredient__quantite', quantite), ' ');
-  item.append(element('span', 'ingredient__nom', ingredient.nom));
-  if (rempli(ingredient.precision)) {
-    item.append(' ', element('span', 'ingredient__precision', ingredient.precision.trim()));
-  }
-  return item;
 }
 
 /** Fenêtre de confirmation de la suppression (<dialog> modal, Échap pour annuler). */
