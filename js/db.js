@@ -403,6 +403,23 @@ export async function ecrireReglage(cle, valeur) {
   });
 }
 
+/** Préfixe des brouillons du formulaire E3, rangés dans les réglages. */
+export const PREFIXE_BROUILLON = 'brouillon:';
+
+/**
+ * Clé du brouillon d'un formulaire : « brouillon:<id> » en modification,
+ * « brouillon:nouvelle » en création. Les brouillons restent sur l'appareil :
+ * ils ne sont ni exportés ni importés.
+ * @param {string} [id] identifiant de la recette modifiée
+ * @returns {string}
+ */
+export function cleBrouillon(id) {
+  return `${PREFIXE_BROUILLON}${id ?? 'nouvelle'}`;
+}
+
+/** Réglage propre à cet appareil, exclu de l'export et de l'import. */
+const estReglageLocal = (cle) => cle === REGLAGE_PERSISTANCE || String(cle).startsWith(PREFIXE_BROUILLON);
+
 /** Promesse de la demande de persistance, pour ne la faire qu'une fois. */
 let demandePersistance = null;
 
@@ -446,7 +463,8 @@ async function blobEnDataUrl(blob) {
 
 /**
  * Exporte toutes les données dans un objet sérialisable en JSON : recettes (photos en
- * data URL), catégories et réglages (sauf les réglages techniques).
+ * data URL), catégories et réglages (sauf les réglages propres à l'appareil : persistance,
+ * brouillons).
  * @returns {Promise<{ application: string, version: number, dateExport: string,
  *   recettes: object[], categories: { nom: string }[], reglages: Object<string, *> }>}
  */
@@ -466,7 +484,7 @@ export async function toutExporter() {
   }
   const reglages = {};
   cles.forEach((cle, i) => {
-    if (cle !== REGLAGE_PERSISTANCE) reglages[cle] = valeurs[i];
+    if (!estReglageLocal(cle)) reglages[cle] = valeurs[i];
   });
   return { ...FORMAT_EXPORT, dateExport: maintenant(), recettes: recettesExportees, categories, reglages };
 }
@@ -531,7 +549,7 @@ export async function toutImporter(donnees, { mode = 'fusionner' } = {}) {
     }
     await creerCategoriesManquantes(categories, valides.flatMap((r) => r.categories));
     for (const [cle, valeur] of Object.entries(reglagesImportes)) {
-      if (cle === REGLAGE_PERSISTANCE || valeur === undefined) continue;
+      if (estReglageLocal(cle) || valeur === undefined) continue;
       if (mode === 'fusionner' && (await attendre(reglages.count(cle))) > 0) continue;
       reglages.put(valeur, cle);
     }

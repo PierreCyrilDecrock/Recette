@@ -18,6 +18,7 @@ import {
   renommerCategorie,
   supprimerCategorie,
   lireReglage,
+  cleBrouillon,
   ecrireReglage,
   demanderPersistance,
   toutExporter,
@@ -418,5 +419,25 @@ describe('recettes d’exemple', () => {
     assert.deepEqual(await chargerExemples(), []);
     assert.equal((await lireRecette('exemple-tarte-poireaux')).titre, 'Ma tarte');
     assert.equal((await listerRecettes()).length, 6);
+  });
+});
+
+describe('brouillons du formulaire', () => {
+  test('clé par recette ou pour une nouvelle recette', () => {
+    assert.equal(cleBrouillon('abc'), 'brouillon:abc');
+    assert.equal(cleBrouillon(), 'brouillon:nouvelle');
+  });
+
+  test('les brouillons ne sont ni exportés ni importés', async () => {
+    await toutEffacer();
+    await ecrireReglage(cleBrouillon(), { etat: { titre: 'En cours' } });
+    await ecrireReglage('tri', 'titre');
+    const fichier = await toutExporter();
+    assert.deepEqual(Object.keys(fichier.reglages), ['tri']);
+
+    await toutImporter({ recettes: [], reglages: { 'brouillon:x': { etat: {} }, theme: 'sombre' } });
+    assert.equal(await lireReglage('brouillon:x'), undefined);
+    assert.equal(await lireReglage('theme'), 'sombre');
+    assert.deepEqual(await lireReglage(cleBrouillon()), { etat: { titre: 'En cours' } });
   });
 });

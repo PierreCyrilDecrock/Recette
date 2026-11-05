@@ -509,54 +509,133 @@
   min-width: 0;
 }
 
-/* Lignes d'ingrédients et d'étapes */
-.edition__lignes {
+/* Bandeau « Brouillon retrouvé » */
+.bandeau-brouillon {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--espace);
+  border-color: var(--accent);
+}
+
+.bandeau-brouillon__titre {
+  font-size: 1.125rem;
+}
+
+/* Lignes d'ingrédients et d'étapes (js/composants/liste-lignes.js) :
+   contenu à gauche ; poignée et menu de ligne à droite, empilés */
+.lignes {
   display: flex;
   flex-direction: column;
 }
 
 .ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--cible);
+  grid-template-areas:
+    "contenu poignee"
+    "contenu menu";
+  gap: 8px;
+  align-items: center;
   padding-block: 10px;
   border-bottom: 1px solid var(--bordure);
+  background: var(--surface);
 }
 
 .ligne:first-child {
   padding-top: 0;
 }
 
-.ligne__supprimer {
+.ligne > :first-child {
+  grid-area: contenu;
+}
+
+.ligne__menu {
+  grid-area: menu;
+}
+
+/* Poignée de glisser-déposer : le doigt la déplace sans faire défiler la page */
+.ligne__poignee {
+  grid-area: poignee;
+  display: grid;
+  place-items: center;
+  width: var(--cible);
+  height: var(--cible);
+  border-radius: 50%;
   color: var(--texte-doux);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.ligne__supprimer:hover {
-  color: var(--danger);
+.ligne__poignee:hover {
+  background: color-mix(in srgb, var(--texte) 8%, transparent);
 }
 
-/* Ingrédient à 360 px : quantité, unité, nom ; puis précision et suppression */
+.ligne__poignee svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+/* Ligne en cours de glissement : soulevée, au-dessus des autres */
+.lignes--glissement {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ligne--glissee {
+  position: relative;
+  z-index: 20;
+  border-radius: var(--rayon-petit);
+  outline: 2px solid var(--accent);
+  box-shadow: 0 12px 28px var(--ombre), 0 2px 6px var(--ombre);
+}
+
+.ligne--glissee .ligne__poignee {
+  cursor: grabbing;
+  color: var(--accent);
+}
+
+/* Ingrédient en ligne libre : un seul champ, poignée et menu sur la même ligne */
+.ligne:has(.ligne-ingredient--libre) {
+  grid-template-columns: minmax(0, 1fr) var(--cible) var(--cible);
+  grid-template-areas: "contenu poignee menu";
+}
+
+/* Ingrédient en champs détaillés à 360 px : quantité et unité, puis nom, puis précision */
 .ligne-ingredient {
   display: grid;
-  grid-template-columns: 3.5rem 5.5rem minmax(0, 1fr) var(--cible);
+  grid-template-columns: 4.5rem minmax(0, 1fr);
   grid-template-areas:
-    "quantite unite nom nom"
-    "precision precision precision supprimer";
+    "quantite unite"
+    "nom nom"
+    "precision precision";
   gap: 8px;
-  align-items: center;
+}
+
+.ligne-ingredient--libre {
+  display: block;
 }
 
 .ligne-ingredient .champ__saisie {
-  padding-inline: 8px;
+  padding-inline: 10px;
 }
 
 .ligne-ingredient__quantite { grid-area: quantite; }
 .ligne-ingredient__unite { grid-area: unite; }
 .ligne-ingredient__nom { grid-area: nom; }
 .ligne-ingredient__precision { grid-area: precision; }
-.ligne-ingredient .ligne__supprimer { grid-area: supprimer; }
 
-/* Étape : numéro, texte auto-redimensionné, suppression */
+/* Étape : numéro et texte auto-redimensionné */
+.ligne:has(.ligne-etape) {
+  align-items: start;
+}
+
 .ligne-etape {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) var(--cible);
+  grid-template-columns: 2rem minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -575,7 +654,7 @@
 }
 
 .ligne-etape textarea.champ__saisie {
-  min-height: 4.5rem;
+  min-height: calc(2 * var(--cible) + 8px);
   resize: none;
   overflow: hidden;
 }
@@ -615,10 +694,15 @@ body:has(.edition__actions) .toasts {
 }
 
 @media (min-width: 768px) {
-  /* Ingrédient sur une seule ligne */
+  /* Ingrédient en champs détaillés sur une seule ligne, poignée et menu au bout */
+  .ligne:has(.ligne-ingredient) {
+    grid-template-columns: minmax(0, 1fr) var(--cible) var(--cible);
+    grid-template-areas: "contenu poignee menu";
+  }
+
   .ligne-ingredient {
-    grid-template-columns: 5rem 6.5rem minmax(0, 2fr) minmax(0, 1.5fr) var(--cible);
-    grid-template-areas: "quantite unite nom precision supprimer";
+    grid-template-columns: 5rem 6.5rem minmax(0, 2fr) minmax(0, 1.5fr);
+    grid-template-areas: "quantite unite nom precision";
   }
 
   .edition__actions {

@@ -30,7 +30,7 @@ js/
   exemples.js   recettes d'exemple
   icones.js     icônes SVG en ligne
   ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
-  composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js
+  composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js
 icones/       icônes de l'app (PWA)
 tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
 docs/         cahier des charges et plan de développement
@@ -42,7 +42,10 @@ docs/         cahier des charges et plan de développement
   exportées, toutes testées dans `tests/modele.test.js`. Il doit pouvoir s'exécuter sous Node.
 - Tous les textes d'interface vont dans `js/textes.js` (objet `T`), jamais en dur dans les écrans.
 - Chaque écran exporte `afficher(conteneur, params)` qui peut renvoyer une fonction de nettoyage
-  (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…).
+  (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…). Cette fonction peut
+  porter une garde `confirmerSortie()` : elle renvoie `true` (partir tout de suite) ou une
+  `Promise<boolean>`. Le routeur revient alors à l'URL de l'écran, attend la réponse, puis rejoue
+  la navigation (lien, retour ou avance) ; il note pour cela `position` dans `history.state`.
 - Routage (`js/app.js`, table `ROUTES`) : `#/favoris` réutilise `liste.js` (`params.favoris`),
   `#/nouvelle` réutilise `edition.js` (sans `id`). Le routeur donne le focus au `<h1>` de l'écran ;
   les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + » ;
@@ -57,7 +60,9 @@ docs/         cahier des charges et plan de développement
   Le champ technique `indexFavori` (index `favori`) n'existe qu'en base, jamais dans les recettes renvoyées.
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
 - Réglages connus (`lireReglage` / `ecrireReglage`) : `tri` (critère de la liste : `date`, `titre`
-  ou `temps`, voir `CRITERES_TRI`).
+  ou `temps`, voir `CRITERES_TRI`) ; brouillons du formulaire sous `cleBrouillon(id)`
+  (`brouillon:<id>` ou `brouillon:nouvelle`, objet `{ date, etat }`), propres à l'appareil :
+  ni exportés ni importés.
 - Sélecteur de portions : `creerSelecteurPortions({ valeur })` renvoie l'élément (propriété `valeur`),
   qui émet `EVENEMENT_PORTIONS` (`detail.portions`). Les portions choisies sur la fiche ne sont
   jamais enregistrées : elles passent au mode cuisine par l'URL.
@@ -72,6 +77,16 @@ docs/         cahier des charges et plan de développement
   affichés (`section`, `minuteur`, `favori`, `photo`, dates) sont conservés tels quels. Chaque
   message d'erreur a l'id `edition-erreur-<champ>` (clé de `validerRecette`). Annuler et Enregistrer
   remplacent l'entrée d'historique (`location.replace`) par la fiche, ou par la liste.
+  Le formulaire se décrit par un « état » (valeurs brutes des champs, `autres` pour les champs non
+  affichés) : pré-remplissage, brouillon (500 ms après chaque modification) et détection des
+  modifications (confirmation de sortie, `beforeunload`) passent par lui.
+  Ligne libre d'un ingrédient (mode par défaut sous 768 px) : analysée par `analyserLigneIngredient`
+  à la sortie du champ, réécrite par `composerLigneIngredient`. Collage de plusieurs lignes :
+  `decouperLignesCollees` (`{ paragraphes: true }` pour les étapes).
+- Lignes réordonnables : `creerListeLignes({ creerContenu, libelles })` de
+  `js/composants/liste-lignes.js` (poignée en Pointer Events, menu de ligne Monter / Descendre /
+  actions propres / Supprimer, annonce aria-live, événement `EVENEMENT_LIGNES`). On déplace la
+  voisine plutôt que la ligne tenue : elle garde ainsi son focus et sa capture du pointeur.
 - Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
   (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
   tel quel par la fiche et le mode cuisine.

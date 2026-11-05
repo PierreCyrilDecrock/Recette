@@ -30,6 +30,8 @@ import {
   lireMinutesSaisie,
   formaterQuantiteSaisie,
   nettoyerSaisie,
+  composerLigneIngredient,
+  decouperLignesCollees,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -980,5 +982,84 @@ describe('nettoyerSaisie', () => {
     const { erreurs } = validerRecette(recette);
     assert.equal(erreurs.ingredients, T.validation.ingredientsObligatoires);
     assert.equal(erreurs.etapes, T.validation.etapesObligatoires);
+  });
+});
+
+describe('decouperLignesCollees', () => {
+  test('une ligne par élément, puces et tirets retirés', () => {
+    assert.deepEqual(
+      decouperLignesCollees('- 250 g de farine\n- 3 œufs\n- 50 cl de lait\n- 1 pincée de sel'),
+      ['250 g de farine', '3 œufs', '50 cl de lait', '1 pincée de sel'],
+    );
+    assert.deepEqual(decouperLignesCollees('• sel\n* poivre\n– muscade\n· thym\n▪ laurier'), ['sel', 'poivre', 'muscade', 'thym', 'laurier']);
+  });
+
+  test('retire les numéros, les cases à cocher et « Étape n : »', () => {
+    assert.deepEqual(
+      decouperLignesCollees('1. Mélanger\n2) Cuire\n3 - Servir\n10. Dix\nÉtape 5 : Manger\n[ ] case\n- [x] fait'),
+      ['Mélanger', 'Cuire', 'Servir', 'Dix', 'Manger', 'case', 'fait'],
+    );
+  });
+
+  test('garde les quantités en début de ligne', () => {
+    assert.deepEqual(
+      decouperLignesCollees('1 pincée de sel\n1.5 kg de farine\n2 œufs\n1/2 citron'),
+      ['1 pincée de sel', '1.5 kg de farine', '2 œufs', '1/2 citron'],
+    );
+  });
+
+  test('ignore les lignes vides, les fins de ligne Windows et réduit les espaces', () => {
+    assert.deepEqual(decouperLignesCollees('\r\n  sel   fin \r\n\r\n-\n poivre\n'), ['sel fin', 'poivre']);
+    assert.deepEqual(decouperLignesCollees(''), []);
+    assert.deepEqual(decouperLignesCollees(undefined), []);
+  });
+
+  test('étapes : un élément par paragraphe quand le texte contient des lignes vides', () => {
+    const texte = '1. Préchauffer le four.\nBeurrer le moule.\n\n2. Mélanger\nla farine.\n\n\n3. Cuire.';
+    assert.deepEqual(decouperLignesCollees(texte, { paragraphes: true }), [
+      'Préchauffer le four. Beurrer le moule.',
+      'Mélanger la farine.',
+      'Cuire.',
+    ]);
+  });
+
+  test('étapes : sans ligne vide, un élément par ligne', () => {
+    assert.deepEqual(decouperLignesCollees('- Couper\n- Cuire', { paragraphes: true }), ['Couper', 'Cuire']);
+  });
+});
+
+describe('composerLigneIngredient', () => {
+  test('écrit quantité, unité, nom et précision sur une ligne', () => {
+    assert.equal(composerLigneIngredient({ quantite: 200, unite: 'g', nom: 'farine' }), '200 g farine');
+    assert.equal(composerLigneIngredient({ quantite: 0.5, unite: 'l', nom: 'lait', precision: 'entier' }), '0,5 l lait, entier');
+    assert.equal(composerLigneIngredient({ quantite: 1.5, unite: 'c. à s.', nom: 'sucre' }), '1,5 c. à s. sucre');
+  });
+
+  test('sous-entend la pièce, accorde et relie les unités libres', () => {
+    assert.equal(composerLigneIngredient({ quantite: 3, unite: 'pièce', nom: 'poireaux', precision: 'émincés' }), '3 poireaux, émincés');
+    assert.equal(composerLigneIngredient({ quantite: 2, unite: 'gousse', nom: 'ail' }), '2 gousses d’ail');
+    assert.equal(composerLigneIngredient({ quantite: 4, unite: 'tranche', nom: 'pain' }), '4 tranches de pain');
+    assert.equal(composerLigneIngredient({ quantite: 2, unite: 'pincée', nom: 'sel' }), '2 pincées sel');
+  });
+
+  test('sans quantité, seul le nom (et la précision) est écrit', () => {
+    assert.equal(composerLigneIngredient({ nom: 'sel et poivre' }), 'sel et poivre');
+    assert.equal(composerLigneIngredient({ unite: 'pincée', nom: 'sel', precision: 'fin' }), 'sel, fin');
+    assert.equal(composerLigneIngredient({}), '');
+  });
+
+  test('analyserLigneIngredient relit la ligne composée', () => {
+    const ingredients = [
+      { quantite: 200, unite: 'g', nom: 'farine', precision: '' },
+      { quantite: 0.5, unite: 'l', nom: 'lait', precision: 'entier' },
+      { quantite: 1.5, unite: 'c. à s.', nom: 'huile d’olive', precision: '' },
+      { quantite: 3, unite: 'pièce', nom: 'poireaux', precision: 'émincés' },
+      { quantite: 2, unite: 'gousse', nom: 'ail', precision: 'écrasées' },
+      { quantite: 1, unite: 'pincée', nom: 'sel', precision: '' },
+      { quantite: 75, unite: 'cl', nom: 'bouillon de légumes', precision: '' },
+    ];
+    for (const ingredient of ingredients) {
+      assert.deepEqual(analyserLigneIngredient(composerLigneIngredient(ingredient)), ingredient);
+    }
   });
 });

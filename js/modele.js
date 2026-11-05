@@ -996,3 +996,70 @@ export function nettoyerSaisie(recette) {
   }
   return propre;
 }
+
+/**
+ * Écrit un ingrédient sur une seule ligne, pour le mode « ligne libre » du formulaire :
+ * { 200, 'g', 'farine' } → « 200 g farine » ; { 2, 'gousse', 'ail' } → « 2 gousses d’ail ».
+ * analyserLigneIngredient relit le résultat : l'unité « pièce » est sous-entendue, les
+ * unités libres sont suivies de « de » (ou « d’ ») et la précision vient après une virgule.
+ * @param {Ingredient} ingredient
+ * @returns {string}
+ */
+export function composerLigneIngredient(ingredient) {
+  const texte = (valeur) => (typeof valeur === 'string' ? valeur.trim() : '');
+  const quantite = formaterQuantiteSaisie(ingredient?.quantite);
+  const unite = texte(ingredient?.unite);
+  const nom = texte(ingredient?.nom);
+  const precision = texte(ingredient?.precision);
+
+  let corps = nom;
+  // Sans quantité, une unité ne serait pas relue comme telle : seul le nom est gardé
+  if (unite && unite !== 'pièce' && quantite) {
+    const forme = ingredient.quantite >= 2 && UNITES_PLURIELLES.has(unite) ? `${unite}s` : unite;
+    if (UNITES.includes(unite) || !nom) corps = [forme, nom].filter(Boolean).join(' ');
+    else corps = `${forme} ${/^[aeiouyhàâäéèêëîïôöûüœ]/i.test(nom) ? 'd’' : 'de '}${nom}`;
+  }
+  const ligne = [quantite, corps].filter(Boolean).join(' ');
+  return precision ? `${ligne}, ${precision}` : ligne;
+}
+
+// Marques de liste retirées en début de ligne collée : puces, tirets, cases à cocher,
+// numéros (« 1. », « 2) », « 3 - ») et « Étape 4 : ». « 1 pincée » ou « 1.5 kg » sont gardés.
+const MARQUE_LISTE = new RegExp(
+  '^(?:[-–—•*·▪◦●○■□☐☑✓✔>]+\\s*'
+  + '|\\[[ xX✓]?\\]\\s*'
+  + '|(?:[ée]tape\\s*)?\\d{1,3}\\s*(?:[.)°:]|[-–](?=\\s))(?=\\s|$)\\s*'
+  + '|[ée]tape\\s*\\d{1,3}\\s*'
+  + ')+',
+  'iu',
+);
+
+/**
+ * Découpe un texte collé en lignes utiles : une par ligne non vide, sans les puces,
+ * tirets et numéros de début de ligne (« 1. », « - », « • »), espaces réduits.
+ * Avec { paragraphes: true } (étapes), un texte qui contient une ligne vide est découpé
+ * par paragraphe : les lignes d'un même paragraphe sont réunies par une espace.
+ * @param {string} texte
+ * @param {{ paragraphes?: boolean }} [options]
+ * @returns {string[]}
+ */
+export function decouperLignesCollees(texte, { paragraphes = false } = {}) {
+  const lignes = String(texte ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const nettoyer = (ligne) => ligne.replace(/\s+/g, ' ').trim().replace(MARQUE_LISTE, '').trim();
+
+  const blocs = [];
+  if (paragraphes && lignes.some((ligne) => ligne.trim() === '')) {
+    let courant = [];
+    for (const ligne of [...lignes, '']) {
+      if (ligne.trim() !== '') {
+        courant.push(nettoyer(ligne));
+      } else if (courant.length > 0) {
+        blocs.push(courant.filter(Boolean).join(' '));
+        courant = [];
+      }
+    }
+  } else {
+    blocs.push(...lignes.map(nettoyer));
+  }
+  return blocs.filter((bloc) => bloc !== '');
+}

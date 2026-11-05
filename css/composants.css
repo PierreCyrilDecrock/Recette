@@ -748,6 +748,12 @@ textarea.champ__saisie {
   animation: apparition-menu var(--duree) var(--courbe);
 }
 
+/* Menu ouvert vers le bas, quand la place manque au-dessus du bouton */
+.menu__liste--bas {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
 @keyframes apparition-menu {
   from {
     opacity: 0;

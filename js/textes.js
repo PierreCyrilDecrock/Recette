@@ -180,13 +180,23 @@ export const T = {
     nom: 'Nom',
     nomIndication: 'Ingrédient',
     precision: 'Précision',
-    precisionIndication: 'Précision (ex. émincé)',
-    supprimerIngredient: (numero) => `Supprimer l’ingrédient ${numero}`,
+    precisionIndication: 'Précision',
+    menuIngredient: (numero) => `Actions de l’ingrédient ${numero}`,
+    positionIngredient: (numero, total) => `Ingrédient déplacé en position ${numero} sur ${total}.`,
     ajouterIngredient: 'Ajouter un ingrédient',
+    // Mode « ligne libre » : « 200 g farine » dans un seul champ
+    ligneLibre: 'Saisir en une ligne',
+    champsDetailles: 'Saisir en champs détaillés',
+    ligneLibreLibelle: 'Quantité, unité et nom',
+    ligneLibreIndication: 'Ex. 200 g farine',
+    // Collage de plusieurs lignes
+    ingredientsColles: (nombre) => (nombre > 1 ? `${nombre} ingrédients ajoutés.` : '1 ingrédient ajouté.'),
+    etapesCollees: (nombre) => (nombre > 1 ? `${nombre} étapes ajoutées.` : '1 étape ajoutée.'),
     // Étapes
     etape: (numero) => `Étape ${numero}`,
     etapeIndication: 'Décrivez cette étape',
-    supprimerEtape: (numero) => `Supprimer l’étape ${numero}`,
+    menuEtape: (numero) => `Actions de l’étape ${numero}`,
+    positionEtape: (numero, total) => `Étape déplacée en position ${numero} sur ${total}.`,
     ajouterEtape: 'Ajouter une étape',
     // Notes
     notesLibelle: 'Notes',
@@ -200,11 +210,29 @@ export const T = {
     enregistrement: 'Enregistrement…',
     erreursFormulaire: 'Corrigez les champs signalés pour enregistrer la recette.',
     enregistree: 'Recette enregistrée.',
+    // Brouillon automatique
+    brouillonTitre: 'Brouillon retrouvé',
+    brouillonTexte: (date) => `Des modifications non enregistrées${date ? ` du ${date}` : ''} ont été conservées.`,
+    reprendreBrouillon: 'Reprendre le brouillon',
+    ignorerBrouillon: 'Ignorer',
+    brouillonRepris: 'Brouillon repris.',
+    // Sortie avec des modifications non enregistrées (<dialog>)
+    quitterTitre: 'Quitter sans enregistrer ?',
+    quitterTexte: 'Vos modifications seront perdues.',
+    continuer: 'Continuer la saisie',
+    quitter: 'Quitter',
     // Identifiant inconnu ou base illisible
     introuvableTitre: 'Recette introuvable',
     introuvableTexte: 'Cette recette n’existe pas ou a été supprimée.',
     erreurTitre: 'Recette indisponible',
     voirRecettes: 'Voir mes recettes',
+  },
+
+  // Menu d'une ligne d'ingrédient ou d'étape (js/composants/liste-lignes.js)
+  lignes: {
+    monter: 'Monter',
+    descendre: 'Descendre',
+    supprimer: 'Supprimer',
   },
 
   // E4 — Mode cuisine

@@ -1,6 +1,9 @@
 // Démarrage de l'application et routeur par hash.
 // Chaque route charge son écran par import() dynamique ; un écran exporte
 // afficher(conteneur, params), qui peut renvoyer une fonction de nettoyage.
+// Cette fonction peut porter une garde de sortie, confirmerSortie() → true | Promise<boolean> :
+// true laisse partir tout de suite ; sinon le routeur revient à l'URL de l'écran, attend la
+// réponse, puis rejoue la navigation (lien, bouton retour ou avance) si elle est acceptée.
 
 import { T } from './textes.js';
 
@@ -35,6 +38,14 @@ let nettoyageCourant = null;
 let numeroNavigation = 0;
 // Le premier affichage ne déplace pas le focus (la page vient de s'ouvrir)
 let premierAffichage = true;
+
+// Garde de sortie : hash et position dans l'historique de l'écran affiché
+let hashCourant = null;
+let positionCourante = 0;
+// Retour à l'écran courant demandé par la garde : le hashchange qui suit est ignoré
+let retourEnCours = false;
+// Navigation acceptée par la garde : elle ne la consulte pas une seconde fois
+let sortieAcceptee = false;
 
 /**
  * Trouve la route correspondant au hash.
@@ -119,8 +130,64 @@ function afficherErreur() {
   conteneur.replaceChildren(section);
 }
 
+/**
+ * Mémorise la position de l'entrée d'historique courante dans son état : elle permet
+ * de savoir de combien d'entrées le navigateur s'est déplacé (retour, avance, lien).
+ */
+function marquerPosition() {
+  const position = history.state?.position;
+  positionCourante = Number.isInteger(position) ? position : positionCourante + 1;
+  history.replaceState({ ...history.state, position: positionCourante }, '');
+  hashCourant = location.hash;
+}
+
+/**
+ * Consulte la garde de l'écran courant avant de le quitter.
+ * @returns {boolean} vrai si la navigation peut continuer tout de suite
+ */
+function consulterGarde() {
+  if (retourEnCours) {
+    retourEnCours = false;
+    if (location.hash === hashCourant) return false; // retour à l'écran gardé : rien à faire
+  }
+  if (sortieAcceptee) {
+    sortieAcceptee = false;
+    return true;
+  }
+  const garde = nettoyageCourant?.confirmerSortie;
+  if (typeof garde !== 'function' || hashCourant === null || location.hash === hashCourant) return true;
+  // La garde répond true tout de suite quand il n'y a rien à confirmer
+  let reponse;
+  try {
+    reponse = garde();
+  } catch (erreur) {
+    console.error(erreur);
+    return true;
+  }
+  if (reponse === true) return true;
+
+  // Retour immédiat à l'écran courant (l'URL reste cohérente pendant la question)
+  const cible = location.hash;
+  const position = history.state?.position;
+  const ecart = Number.isInteger(position) ? position - positionCourante : 1;
+  retourEnCours = true;
+  if (ecart !== 0) history.go(-ecart);
+  else location.replace(hashCourant);
+  Promise.resolve(reponse)
+    .then((accepte) => {
+      if (!accepte) return;
+      // On rejoue le déplacement d'origine
+      sortieAcceptee = true;
+      if (ecart !== 0) history.go(ecart);
+      else location.replace(cible);
+    })
+    .catch((erreur) => console.error(erreur));
+  return false;
+}
+
 /** Affiche l'écran correspondant au hash courant. */
 async function naviguer() {
+  if (!consulterGarde()) return;
   const resolution = resoudre(location.hash);
   if (!resolution) {
     // Route inconnue : retour à l'accueil, sans laisser l'URL fautive dans l'historique
@@ -146,6 +213,7 @@ async function naviguer() {
       return;
     }
     nettoyageCourant = nettoyage ?? null;
+    marquerPosition();
     annoncerEcran();
   } catch (erreur) {
     console.error(erreur);
@@ -153,6 +221,7 @@ async function naviguer() {
     nettoyer();
     mettreAJourCoquille(route);
     afficherErreur();
+    marquerPosition();
   }
 }
 
