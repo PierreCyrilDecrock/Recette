@@ -73,9 +73,71 @@ export const T = {
 
   // E2 — Fiche recette
   fiche: {
-    titre: 'Recette',
+    retour: 'Retour à la liste',
+    favori: 'Favori',
+    categories: 'Catégories',
+    // Bloc infos
+    infos: 'En bref',
+    difficulte: 'Difficulté',
+    difficultes: { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' },
+    preparation: 'Préparation',
+    cuisson: 'Cuisson',
+    repos: 'Repos',
+    total: 'Total',
+    // Blocs de contenu
+    ingredients: 'Ingrédients',
+    etapes: 'Étapes',
+    notes: 'Notes',
+    source: 'Source :',
+    // Actions
+    actions: 'Actions sur la recette',
     cuisiner: 'Cuisiner',
+    plusActions: 'Plus d’actions',
     modifier: 'Modifier',
+    dupliquer: 'Dupliquer',
+    partager: 'Partager',
+    supprimer: 'Supprimer',
+    copieCreee: 'Copie créée. Vous pouvez maintenant la modifier.',
+    copieePressePapiers: 'Recette copiée dans le presse-papiers.',
+    partageImpossible: 'Le partage n’est pas disponible sur cet appareil.',
+    // Confirmation de suppression (<dialog>)
+    confirmationTitre: 'Supprimer cette recette ?',
+    confirmationTexte: (titre) => `« ${titre} » sera définitivement effacée de cet appareil.`,
+    annuler: 'Annuler',
+    confirmerSuppression: 'Supprimer',
+    supprimee: (titre) => `« ${titre} » a été supprimée.`,
+    // Identifiant inconnu
+    introuvableTitre: 'Recette introuvable',
+    introuvableTexte: 'Cette recette n’existe pas ou a été supprimée.',
+    erreurTitre: 'Recette indisponible',
+    voirRecettes: 'Voir mes recettes',
+  },
+
+  // Sélecteur de portions (js/composants/selecteur-portions.js)
+  portions: {
+    groupe: 'Nombre de portions',
+    moins: 'Une portion de moins',
+    plus: 'Une portion de plus',
+    unite: (nombre) => (nombre > 1 ? 'portions' : 'portion'),
+  },
+
+  // Texte brut d'une recette partagée (modele.js → formaterRecetteTexte)
+  partage: {
+    portions: (nombre) => `Pour ${nombre} ${nombre > 1 ? 'portions' : 'portion'}`,
+    temps: {
+      tempsPreparation: 'Préparation',
+      tempsCuisson: 'Cuisson',
+      tempsRepos: 'Repos',
+    },
+    ingredients: 'Ingrédients',
+    etapes: 'Étapes',
+    notes: 'Notes',
+    source: 'Source :',
+  },
+
+  // Messages éphémères (js/composants/toast.js)
+  toast: {
+    region: 'Notifications',
   },
 
   // E3 — Création et modification

@@ -23,6 +23,9 @@ import {
   teinteVisuel,
   initiale,
   CRITERES_TRI,
+  lirePortions,
+  urlSource,
+  formaterRecetteTexte,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -761,5 +764,82 @@ describe('CRITERES_TRI', () => {
     ];
     const ordres = CRITERES_TRI.map((critere) => trier(recettes, critere).map((r) => r.titre).join(''));
     assert.deepEqual(ordres, ['AB', 'AB', 'BA']);
+  });
+});
+
+describe('lirePortions', () => {
+  test('accepte un entier de 1 à 100, en chaîne ou en nombre', () => {
+    assert.equal(lirePortions('6', 4), 6);
+    assert.equal(lirePortions(' 12 ', 4), 12);
+    assert.equal(lirePortions('1', 4), 1);
+    assert.equal(lirePortions('100', 4), 100);
+    assert.equal(lirePortions(8, 4), 8);
+  });
+
+  test('renvoie la valeur par défaut sinon', () => {
+    for (const valeur of [undefined, null, '', '0', '101', '-2', '2.5', '1e2', 'six', '6abc', 2.5, NaN]) {
+      assert.equal(lirePortions(valeur, 4), 4, String(valeur));
+    }
+  });
+});
+
+describe('urlSource', () => {
+  test('reconnaît les adresses http et https', () => {
+    assert.equal(urlSource('https://cuisine.exemple.fr/tarte'), 'https://cuisine.exemple.fr/tarte');
+    assert.equal(urlSource('  http://exemple.fr  '), 'http://exemple.fr/');
+  });
+
+  test('complète « www. » en https', () => {
+    assert.equal(urlSource('www.exemple.fr/recette'), 'https://www.exemple.fr/recette');
+  });
+
+  test('refuse les autres textes et les schémas dangereux', () => {
+    for (const texte of ['Le livre de Mamie', 'javascript:alert(1)', 'data:text/html,x', 'ftp://exemple.fr',
+      'https://localhost', 'https://exemple.fr et la suite', '', undefined, 42]) {
+      assert.equal(urlSource(texte), null, String(texte));
+    }
+  });
+});
+
+describe('formaterRecetteTexte', () => {
+  const recette = recetteValide({
+    titre: 'Velouté',
+    description: 'Tout doux.',
+    portions: 4,
+    tempsPreparation: 15,
+    tempsCuisson: 30,
+    ingredients: [
+      { quantite: 1, unite: 'kg', nom: 'potimarron', section: 'Soupe' },
+      { quantite: 1, unite: 'c. à s.', nom: 'huile', section: 'Soupe' },
+      { quantite: 1, unite: 'pièce', nom: 'oignon', precision: 'émincé', section: 'Soupe' },
+      { nom: 'sel et poivre' },
+    ],
+    etapes: [{ texte: 'Couper.' }, { texte: 'Cuire.' }],
+    notes: 'Avec des graines.',
+    source: 'https://exemple.fr',
+  });
+
+  test('assemble titre, résumé, ingrédients, étapes, notes et source', () => {
+    assert.equal(formaterRecetteTexte(recette), [
+      'Velouté\nTout doux.',
+      `Pour 4 portions · Préparation 15${E}min · Cuisson 30${E}min`,
+      `Ingrédients\n\nSoupe\n- 1${E}kg potimarron\n- 1${E}c. à s. huile\n- 1 oignon, émincé\n- sel et poivre`,
+      'Étapes\n1. Couper.\n2. Cuire.',
+      'Notes\nAvec des graines.',
+      'Source : https://exemple.fr',
+    ].join('\n\n'));
+  });
+
+  test('met les quantités à l’échelle des portions demandées', () => {
+    const texte = formaterRecetteTexte(recette, 6);
+    assert.match(texte, /Pour 6 portions/);
+    assert.match(texte, new RegExp(`- 1,5${E}kg potimarron`));
+    assert.match(texte, new RegExp(`- 1${E}½${E}c. à s. huile`));
+    assert.match(texte, /- 2 oignon, émincé/);
+  });
+
+  test('omet les blocs vides', () => {
+    const texte = formaterRecetteTexte(recetteValide({ titre: 'Simple', portions: 1 }));
+    assert.equal(texte, 'Simple\n\nPour 1 portion\n\nIngrédients\n- 3 poireaux\n\nÉtapes\n1. Faire fondre les poireaux.');
   });
 });

@@ -804,3 +804,100 @@ export function initiale(titre) {
 
 /** Critères de tri acceptés par trier(), dans l'ordre du menu de la liste. */
 export const CRITERES_TRI = Object.freeze(['date', 'titre', 'temps']);
+
+// ---------------------------------------------------------------------------
+// Fiche recette : portions demandées, source, texte à partager
+// ---------------------------------------------------------------------------
+
+/**
+ * Lit un nombre de portions venu de l'extérieur (paramètre d'URL « ?portions=6 ») :
+ * un entier écrit en chiffres, entre 1 et 100. Sinon, renvoie la valeur par défaut.
+ * @param {unknown} valeur ex. « 6 »
+ * @param {number} defaut valeur renvoyée si la saisie est absente ou invalide
+ * @returns {number}
+ */
+export function lirePortions(valeur, defaut) {
+  const texte = typeof valeur === 'number' ? String(valeur) : String(valeur ?? '').trim();
+  if (!/^\d{1,3}$/.test(texte)) return defaut;
+  const portions = Number(texte);
+  return portions >= LIMITES.portionsMin && portions <= LIMITES.portionsMax ? portions : defaut;
+}
+
+/**
+ * Reconnaît une adresse web dans le champ « source » : seules les URL http et https
+ * deviennent des liens (jamais « javascript: » ni « data: »). « www.exemple.fr » est
+ * accepté et complété en https.
+ * @param {string} texte
+ * @returns {string|null} l'URL normalisée, ou null si ce n'est pas une adresse web
+ */
+export function urlSource(texte) {
+  if (typeof texte !== 'string') return null;
+  const brut = texte.trim();
+  if (brut === '' || /\s/.test(brut)) return null;
+  const candidat = /^www\./i.test(brut) ? `https://${brut}` : brut;
+  if (!/^https?:\/\//i.test(candidat)) return null;
+  try {
+    const url = new URL(candidat);
+    return url.hostname.includes('.') ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Une ligne d'ingrédient lisible : « 1,5 kg potimarron, en cubes ». */
+function ligneIngredient(ingredient) {
+  const quantite = formaterQuantite(ingredient?.quantite, ingredient?.unite);
+  const nom = String(ingredient?.nom ?? '').trim();
+  const precision = estTexteRempli(ingredient?.precision) ? `, ${ingredient.precision.trim()}` : '';
+  return [quantite, nom].filter(Boolean).join(' ') + precision;
+}
+
+/**
+ * Texte brut d'une recette, pour la partager (navigator.share ou presse-papiers) :
+ * titre, description, portions et temps, ingrédients (mis à l'échelle, regroupés par
+ * section), étapes numérotées, notes et source. Les blocs vides sont omis.
+ * @param {Recette} recette
+ * @param {number} [portions] nombre de portions voulu (par défaut, celui de la recette)
+ * @returns {string}
+ */
+export function formaterRecetteTexte(recette, portions = recette?.portions) {
+  const P = T.partage;
+  const blocs = [];
+  const texte = (valeur) => (estTexteRempli(valeur) ? valeur.trim() : '');
+
+  blocs.push([texte(recette?.titre), texte(recette?.description)].filter(Boolean).join('\n'));
+
+  const resume = [];
+  const cible = estNombre(portions) && portions > 0 ? portions : recette?.portions;
+  if (estNombre(cible) && cible > 0) resume.push(P.portions(cible));
+  for (const champ of CHAMPS_TEMPS) {
+    const minutes = recette?.[champ];
+    if (estNombre(minutes) && minutes > 0) resume.push(`${P.temps[champ]} ${formaterDuree(minutes)}`);
+  }
+  blocs.push(resume.join(' · '));
+
+  const ingredients = Array.isArray(recette?.ingredients)
+    ? mettreALEchelle(recette.ingredients, recette.portions, cible)
+    : [];
+  if (ingredients.length > 0) {
+    const lignes = [P.ingredients];
+    let section = '';
+    for (const ingredient of ingredients) {
+      const nouvelle = texte(ingredient?.section);
+      if (nouvelle && nouvelle !== section) lignes.push('', nouvelle);
+      section = nouvelle;
+      lignes.push(`- ${ligneIngredient(ingredient)}`);
+    }
+    blocs.push(lignes.join('\n'));
+  }
+
+  const etapes = Array.isArray(recette?.etapes) ? recette.etapes.map((e) => texte(e?.texte)).filter(Boolean) : [];
+  if (etapes.length > 0) {
+    blocs.push([P.etapes, ...etapes.map((e, i) => `${i + 1}. ${e}`)].join('\n'));
+  }
+
+  if (texte(recette?.notes)) blocs.push(`${P.notes}\n${texte(recette.notes)}`);
+  if (texte(recette?.source)) blocs.push(`${P.source} ${texte(recette.source)}`);
+
+  return blocs.filter(Boolean).join('\n\n');
+}

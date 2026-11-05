@@ -60,18 +60,20 @@ test("le bouton « + » ouvre l'édition et masque la navigation", async ({ page
   await expect(page.locator('.bouton-flottant')).toBeVisible();
 });
 
-test('les routes à paramètre transmettent leur identifiant', async ({ page }) => {
+test('les routes à paramètre transmettent leur identifiant et leur requête', async ({ page }) => {
   await page.goto('./#/recette/tarte%20aux%20poireaux');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recette');
-  await expect(page.locator('.parametres dd')).toHaveText('tarte aux poireaux');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recette introuvable');
   // La fiche n'est pas un onglet : aucun n'est actif
   await expect(page.locator('.barre-onglets [aria-current]')).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Cuisiner' }).click();
-  await expect(page).toHaveURL(/#\/cuisine\/tarte%20aux%20poireaux$/);
+  await page.goto('./#/cuisine/tarte%20aux%20poireaux?portions=6');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mode cuisine');
+  await expect(page.locator('.parametres dt')).toHaveText(['portions', 'id']);
+  await expect(page.locator('.parametres dd')).toHaveText(['6', 'tarte aux poireaux']);
   await expect(page.locator('.barre-onglets')).toBeHidden();
   await expect(page.locator('.bouton-flottant')).toBeHidden();
+  await page.getByRole('link', { name: 'Quitter le mode cuisine' }).click();
+  await expect(page).toHaveURL(/#\/recette\/tarte%20aux%20poireaux\?portions=6$/);
 
   await page.goto('./#/edition/42');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Modifier la recette');

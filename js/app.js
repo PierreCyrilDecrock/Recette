@@ -10,12 +10,15 @@ import { T } from './textes.js';
  * - cles : noms des paramètres capturés par le motif ;
  * - extra : paramètres fixes transmis à l'écran ;
  * - onglet : onglet à marquer comme actif (aria-current="page") ;
- * - immersif : masque la barre d'onglets et le bouton « + ».
+ * - immersif : masque la barre d'onglets et le bouton « + » ;
+ * - sansAjout : masque seulement le bouton « + » (l'écran a sa propre barre d'actions en bas).
+ * Les paramètres de requête (« #/cuisine/42?portions=6 ») sont transmis en chaînes ;
+ * ceux du motif et de extra l'emportent en cas de conflit.
  */
 const ROUTES = [
   { motif: /^\/$/, ecran: 'liste', onglet: 'recettes' },
   { motif: /^\/favoris$/, ecran: 'liste', extra: { favoris: true }, onglet: 'favoris' },
-  { motif: /^\/recette\/([^/]+)$/, ecran: 'fiche', cles: ['id'] },
+  { motif: /^\/recette\/([^/]+)$/, ecran: 'fiche', cles: ['id'], sansAjout: true },
   { motif: /^\/nouvelle$/, ecran: 'edition', immersif: true },
   { motif: /^\/edition\/([^/]+)$/, ecran: 'edition', cles: ['id'], immersif: true },
   { motif: /^\/cuisine\/([^/]+)$/, ecran: 'cuisine', cles: ['id'], immersif: true },
@@ -35,15 +38,15 @@ let premierAffichage = true;
 
 /**
  * Trouve la route correspondant au hash.
- * @param {string} hash ex. « #/recette/42 »
+ * @param {string} hash ex. « #/recette/42 » ou « #/cuisine/42?portions=6 »
  * @returns {{ route: object, params: object } | null} null si la route est inconnue
  */
 function resoudre(hash) {
-  const chemin = hash.replace(/^#/, '') || '/';
+  const [chemin, requete = ''] = (hash.replace(/^#/, '') || '/').split(/\?(.*)/s);
   for (const route of ROUTES) {
-    const resultat = chemin.match(route.motif);
+    const resultat = (chemin || '/').match(route.motif);
     if (!resultat) continue;
-    const params = { ...route.extra };
+    const params = { ...Object.fromEntries(new URLSearchParams(requete)), ...route.extra };
     try {
       (route.cles ?? []).forEach((cle, i) => {
         params[cle] = decodeURIComponent(resultat[i + 1]);
@@ -67,7 +70,7 @@ function mettreAJourCoquille(route) {
   }
   const immersif = Boolean(route.immersif);
   barreOnglets.hidden = immersif;
-  boutonFlottant.hidden = immersif;
+  boutonFlottant.hidden = immersif || Boolean(route.sansAjout);
   document.body.toggleAttribute('data-immersif', immersif);
 }
 

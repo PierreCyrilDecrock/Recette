@@ -30,7 +30,7 @@ js/
   exemples.js   recettes d'exemple
   icones.js     icônes SVG en ligne
   ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
-  composants/   carte-recette.js, selecteur-portions.js, minuteur.js
+  composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js
 icones/       icônes de l'app (PWA)
 tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
 docs/         cahier des charges et plan de développement
@@ -45,7 +45,10 @@ docs/         cahier des charges et plan de développement
   (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…).
 - Routage (`js/app.js`, table `ROUTES`) : `#/favoris` réutilise `liste.js` (`params.favoris`),
   `#/nouvelle` réutilise `edition.js` (sans `id`). Le routeur donne le focus au `<h1>` de l'écran ;
-  les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + ».
+  les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + » ;
+  `sansAjout` (fiche) masque seulement le « + », remplacé par la barre d'actions de l'écran.
+  Les paramètres de requête du hash arrivent en chaînes dans `params` (`#/cuisine/:id?portions=6`
+  → `params.portions`, à lire avec `lirePortions`) ; ceux du motif l'emportent.
 - Les libellés de `index.html` portent `data-texte` / `data-texte-aria` (chemin dans `T`) :
   `app.js` les remplace au démarrage.
 - Données : passer uniquement par `js/db.js` (jamais d'IndexedDB direct dans les écrans). Ses erreurs
@@ -55,6 +58,13 @@ docs/         cahier des charges et plan de développement
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
 - Réglages connus (`lireReglage` / `ecrireReglage`) : `tri` (critère de la liste : `date`, `titre`
   ou `temps`, voir `CRITERES_TRI`).
+- Sélecteur de portions : `creerSelecteurPortions({ valeur })` renvoie l'élément (propriété `valeur`),
+  qui émet `EVENEMENT_PORTIONS` (`detail.portions`). Les portions choisies sur la fiche ne sont
+  jamais enregistrées : elles passent au mode cuisine par l'URL.
+- Messages éphémères : `afficherToast(message, { erreur })` de `js/composants/toast.js` (zone
+  `role="status"` dans `<body>`, elle survit au changement d'écran).
+- Confirmation d'une action destructrice : `<dialog>` modal (`showModal()`, `form method="dialog"`,
+  focus sur Annuler) ; le focus est rendu au bouton qui a ouvert le menu.
 - Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
   (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
   tel quel par la fiche et le mode cuisine.

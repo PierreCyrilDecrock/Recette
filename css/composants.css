@@ -606,3 +606,264 @@ textarea.champ__saisie {
   color: var(--danger);
   font-weight: 600;
 }
+
+/* --------------------------------------------------------------------------
+   Sélecteur de portions : − valeur + (js/composants/selecteur-portions.js)
+   -------------------------------------------------------------------------- */
+.selecteur-portions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: var(--fond);
+}
+
+.selecteur-portions__bouton {
+  display: grid;
+  place-items: center;
+  width: var(--cible);
+  height: var(--cible);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px var(--ombre);
+  color: var(--accent);
+  transition: transform var(--duree) var(--courbe), background-color var(--duree) var(--courbe);
+  touch-action: manipulation;
+}
+
+.selecteur-portions__bouton:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.selecteur-portions__bouton:active {
+  transform: scale(0.92);
+}
+
+/* Aux bornes, le bouton reste focalisable mais paraît inactif */
+.selecteur-portions__bouton[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.selecteur-portions__bouton svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.selecteur-portions__valeur {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 4.5rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.selecteur-portions__nombre {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.selecteur-portions__unite {
+  color: var(--texte-doux);
+  font-size: 0.8125rem;
+}
+
+/* --------------------------------------------------------------------------
+   Étiquettes : catégories affichées (non interactives)
+   -------------------------------------------------------------------------- */
+.etiquettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.etiquette {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--texte);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Menu d'actions secondaires (bouton aria-expanded + liste qui s'ouvre vers le haut)
+   -------------------------------------------------------------------------- */
+.menu {
+  position: relative;
+}
+
+.menu__liste {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  min-width: 13rem;
+  padding: 6px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  box-shadow: 0 10px 30px var(--ombre), 0 2px 6px var(--ombre);
+  animation: apparition-menu var(--duree) var(--courbe);
+}
+
+@keyframes apparition-menu {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.menu__action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--cible);
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--rayon-petit);
+  background: transparent;
+  color: var(--texte);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+}
+
+.menu__action:hover {
+  background: color-mix(in srgb, var(--texte) 7%, transparent);
+}
+
+.menu__action:focus-visible {
+  outline-offset: -3px;
+}
+
+.menu__action svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.menu__action--danger {
+  color: var(--danger);
+}
+
+/* --------------------------------------------------------------------------
+   Dialogue de confirmation (<dialog> modal)
+   -------------------------------------------------------------------------- */
+.dialogue {
+  width: min(100% - 2 * var(--espace), 26rem);
+  max-width: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--texte);
+  box-shadow: 0 20px 50px var(--ombre);
+}
+
+.dialogue[open] {
+  animation: apparition-dialogue var(--duree) var(--courbe);
+}
+
+.dialogue::backdrop {
+  background: rgb(20 10 5 / 0.45);
+}
+
+@keyframes apparition-dialogue {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.dialogue__corps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.dialogue__titre {
+  font-size: 1.25rem;
+}
+
+.dialogue__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Toast : message éphémère au-dessus de la barre d'onglets (js/composants/toast.js)
+   -------------------------------------------------------------------------- */
+.toasts {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace));
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding-inline: calc(var(--espace) + var(--sa-gauche)) calc(var(--espace) + var(--sa-droite));
+  pointer-events: none;
+}
+
+body[data-immersif] .toasts {
+  bottom: calc(var(--sa-bas) + var(--espace));
+}
+
+.toast {
+  max-width: 30rem;
+  padding: 12px 18px;
+  border-radius: var(--rayon);
+  /* Couleurs inversées : le message se détache du contenu dans les deux thèmes */
+  background: var(--texte);
+  color: var(--surface);
+  box-shadow: 0 8px 24px var(--ombre);
+  font-weight: 600;
+  text-align: center;
+  animation: apparition-toast var(--duree) var(--courbe);
+  pointer-events: auto;
+}
+
+.toast--erreur {
+  background: var(--danger);
+  color: var(--sur-accent);
+}
+
+.toast--sortie {
+  animation: disparition-toast var(--duree) var(--courbe) forwards;
+}
+
+@keyframes apparition-toast {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes disparition-toast {
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}

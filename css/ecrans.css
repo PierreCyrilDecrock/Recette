@@ -137,6 +137,283 @@
 /* --------------------------------------------------------------------------
    E2 — Fiche recette (js/ecrans/fiche.js)
    -------------------------------------------------------------------------- */
+.fiche {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace);
+}
+
+/* Visuel pleine largeur : il déborde jusqu'aux bords de l'écran sur mobile */
+.fiche__media {
+  position: relative;
+  margin: calc(-1 * var(--espace)) calc(-1 * (var(--espace) + var(--sa-droite))) 0 calc(-1 * (var(--espace) + var(--sa-gauche)));
+  overflow: hidden;
+  border-radius: 0 0 var(--rayon) var(--rayon);
+}
+
+.fiche__media .visuel {
+  aspect-ratio: 16 / 10;
+  max-height: 340px;
+  width: 100%;
+}
+
+/* Boutons ronds posés sur le visuel : retour à gauche, favori à droite */
+.fiche__flottant {
+  position: absolute;
+  top: 12px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 2px 8px var(--ombre);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.fiche__flottant:hover {
+  background: var(--surface);
+}
+
+.fiche__retour {
+  left: calc(12px + var(--sa-gauche));
+}
+
+.fiche__favori {
+  right: calc(12px + var(--sa-droite));
+  color: var(--accent);
+}
+
+.fiche__favori svg {
+  transition: fill var(--duree) var(--courbe), transform var(--duree) var(--courbe);
+}
+
+.fiche__favori[aria-pressed="true"] svg {
+  fill: currentColor;
+  transform: scale(1.08);
+}
+
+.fiche__titres {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.fiche__titre {
+  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+}
+
+.fiche__description {
+  color: var(--texte-doux);
+  font-size: 1.0625rem;
+  white-space: pre-line;
+}
+
+/* Bloc infos : rangée de petites cartes arrondies */
+.fiche__infos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.25rem, 1fr));
+  gap: 8px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px var(--espace);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--ombre);
+}
+
+.info__libelle {
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+}
+
+.info__valeur {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.info--total {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--bordure));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+/* Blocs ingrédients, étapes, notes */
+.fiche__colonnes {
+  display: grid;
+  gap: var(--espace);
+  align-items: start;
+}
+
+.fiche__bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fiche__bloc-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.fiche__bloc-titre {
+  font-size: 1.25rem;
+}
+
+.ingredients__section {
+  margin-top: 8px;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.ingredients {
+  display: flex;
+  flex-direction: column;
+}
+
+.ingredient {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bordure);
+  font-size: 1.0625rem;
+}
+
+.ingredient:last-child {
+  border-bottom: 0;
+}
+
+.ingredient__quantite {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ingredient__precision {
+  color: var(--texte-doux);
+}
+
+/* Étapes numérotées, texte de 17 px minimum */
+.etapes {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  counter-reset: etape;
+}
+
+.etape {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 12px;
+  counter-increment: etape;
+}
+
+.etape::before {
+  content: counter(etape);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--sur-accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.etape__texte {
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.fiche__notes-texte {
+  font-size: 1.0625rem;
+  white-space: pre-line;
+}
+
+.fiche__source {
+  overflow-wrap: anywhere;
+}
+
+/* Barre d'actions : collée en bas, dans la zone du pouce, au-dessus des onglets */
+.fiche__actions {
+  position: sticky;
+  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + 12px);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 32rem;
+  margin: 8px auto 0;
+}
+
+.fiche__cuisiner {
+  flex: 1;
+  min-height: 56px;
+  font-size: 1.125rem;
+  box-shadow: 0 6px 18px var(--ombre), 0 2px 4px var(--ombre);
+}
+
+.fiche__cuisiner svg {
+  width: 24px;
+  height: 24px;
+}
+
+.fiche__actions .menu__declencheur {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--bordure);
+  background: var(--surface);
+  box-shadow: 0 6px 18px var(--ombre), 0 2px 4px var(--ombre);
+}
+
+.fiche__actions .menu__declencheur[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fiche__actions .menu__declencheur svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Identifiant inconnu */
+.fiche-introuvable {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espace);
+}
+
+.fiche-introuvable .titre-ecran {
+  margin-bottom: 0;
+}
+
+/* Tablette : visuel arrondi dans la colonne, ingrédients et étapes en deux colonnes */
+@media (min-width: 768px) {
+  .fiche__media {
+    margin: 0;
+    border-radius: var(--rayon);
+  }
+
+  .fiche__media .visuel {
+    aspect-ratio: 3 / 1;
+    max-height: 260px;
+  }
+
+  .fiche__colonnes {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
 
 /* --------------------------------------------------------------------------
    E3 — Création et modification (js/ecrans/edition.js)

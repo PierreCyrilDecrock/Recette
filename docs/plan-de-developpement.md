@@ -207,8 +207,8 @@ Vérifie avec Playwright : passer de 4 à 6 portions sur une recette d'exemple m
 ```
 
 **Vérifications**
-- [ ] Les quantités restent lisibles avec 1, 3, 7 et 12 portions.
-- [ ] La suppression demande confirmation, et le favori se retrouve dans l'onglet Favoris.
+- [x] Les quantités restent lisibles avec 1, 3, 7 et 12 portions.
+- [x] La suppression demande confirmation, et le favori se retrouve dans l'onglet Favoris.
 
 ### Étape 6 — E3 : formulaire de création et de modification 🧭
 
