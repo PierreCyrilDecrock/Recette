@@ -70,7 +70,7 @@ Crée les fondations du projet, sans encore coder l'application :
    - Les règles d'interface : mobile first à 360 px ; points de rupture à 768 px et 1024 px ; cibles tactiles d'au moins 44 × 44 px ; variables CSS --accent, --surface, --fond, --texte, --texte-doux, --bordure ; coins arrondis de 16 px ; corps du texte à 16 px minimum ; transitions de 150 à 250 ms ; respect de prefers-reduced-motion ; env(safe-area-inset-*).
    - Les commandes : servir l'app (npx serve . ou python3 -m http.server 8000), tests unitaires (npm test), tests de bout en bout (npm run e2e).
    - La définition de « terminé » pour une étape : tests verts, vérification visuelle à 360 px et 1024 px, aucune erreur dans la console, CLAUDE.md mis à jour si une convention change, un commit en français.
-2. Un package.json (private: true, type: module) avec les scripts test (node --test tests/), serve et e2e (playwright test), et @playwright/test en devDependencies.
+2. Un package.json (private: true, type: module) avec les scripts test (node --test "tests/**/*.test.js", Node ≥ 22), serve et e2e (playwright test, configuré sur tests/e2e), et @playwright/test en devDependencies.
 3. Un .gitignore (node_modules, test-results, playwright-report, .DS_Store).
 4. Un .editorconfig (2 espaces, LF, UTF-8).
 5. Un README.md court : présentation, lancement en local, liste des lots.

@@ -1,0 +1,81 @@
+# Recette — guide du projet
+
+Application web mobile first pour créer, ranger et cuisiner ses recettes, inspirée de Croûton.
+Cœur du produit : la fiche recette (infos, ingrédients, étapes) et un mode cuisine étape par étape.
+Tout fonctionne hors ligne, sans compte ni serveur : les données restent sur l'appareil.
+
+- Spécification : `docs/cahier-des-charges.md` (fait foi en cas de doute).
+- Feuille de route et prompts par étape : `docs/plan-de-developpement.md`.
+
+## Pile technique
+
+- HTML5 sémantique, CSS moderne (variables, Grid, Flexbox, `clamp()`), JavaScript ES2022 en modules natifs.
+- Sans framework et sans étape de build : les fichiers sont servis tels quels.
+- Données dans IndexedDB (magasins `recettes`, `categories`, `reglages`).
+- PWA : `manifest.webmanifest` et service worker `sw.js` (cache des fichiers de l'app).
+- Routage par hash : `#/`, `#/favoris`, `#/recette/:id`, `#/nouvelle`, `#/edition/:id`, `#/cuisine/:id`, `#/reglages`.
+
+## Arborescence cible
+
+```
+index.html
+manifest.webmanifest
+sw.js
+css/          base.css, composants.css, ecrans.css
+js/
+  app.js        démarrage et routeur
+  db.js         accès IndexedDB
+  modele.js     logique métier pure (validation, mise à l'échelle, parsing…)
+  textes.js     tous les textes d'interface (objet T)
+  exemples.js   recettes d'exemple
+  icones.js     icônes SVG en ligne
+  ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
+  composants/   carte-recette.js, selecteur-portions.js, minuteur.js
+icones/       icônes de l'app (PWA)
+tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
+docs/         cahier des charges et plan de développement
+```
+
+## Règles de code
+
+- `js/modele.js` est **pur** : aucun accès au DOM ni à IndexedDB, uniquement des fonctions
+  exportées, toutes testées dans `tests/modele.test.js`. Il doit pouvoir s'exécuter sous Node.
+- Tous les textes d'interface vont dans `js/textes.js` (objet `T`), jamais en dur dans les écrans.
+- Chaque écran exporte `afficher(conteneur, params)` qui peut renvoyer une fonction de nettoyage
+  (retirer les écouteurs, libérer le Wake Lock, révoquer les URL d'objets…).
+- Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
+- Code commenté en français ; noms de variables et de fonctions en français, alignés sur le
+  modèle de données (`titre`, `portions`, `tempsPreparation`, `etapes`…).
+- Aucune dépendance d'exécution (les `devDependencies` servent uniquement aux tests et aux outils).
+- Budget : moins de 100 Ko de JavaScript compressé au total.
+- Chemins relatifs partout : l'app doit fonctionner dans un sous-dossier (GitHub Pages).
+
+## Règles d'interface
+
+- Mobile first, maquettes à 360 px ; points de rupture à 768 px (fiche en deux colonnes)
+  et 1024 px (liste et fiche côte à côte).
+- Actions principales dans la zone du pouce (bas de l'écran) ; cibles tactiles ≥ 44 × 44 px.
+- Couleurs uniquement via les variables CSS : `--accent`, `--surface`, `--fond`, `--texte`,
+  `--texte-doux`, `--bordure`. Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1.
+- Cartes : coins arrondis de 16 px, marges internes de 16 px, ombre légère ou bordure fine.
+- Typographie : `ui-rounded, system-ui, sans-serif` ; corps du texte ≥ 16 px.
+- Transitions de 150 à 250 ms ; tout mouvement désactivé avec `prefers-reduced-motion`.
+- Encoches et barre système : `env(safe-area-inset-*)`.
+- Accessibilité WCAG 2.2 AA : libellés ARIA, navigation clavier, focus visible.
+
+## Commandes
+
+| Action | Commande |
+| --- | --- |
+| Installer les outils de dev | `npm install` |
+| Servir l'app | `npm run serve` (ou `python3 -m http.server 8000`) |
+| Tests unitaires | `npm test` (`node --test`, Node ≥ 22) |
+| Tests de bout en bout | `npm run e2e` (Playwright, dossier `tests/e2e/`) |
+
+## Définition de « terminé » pour une étape
+
+1. Les tests unitaires et de bout en bout sont verts.
+2. Vérification visuelle à 360 px et 1024 px, en thème clair et sombre.
+3. Aucune erreur dans la console du navigateur.
+4. `CLAUDE.md` mis à jour si une convention change.
+5. Un commit par étape, message en français.
