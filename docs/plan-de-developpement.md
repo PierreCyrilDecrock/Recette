@@ -185,8 +185,8 @@ Vérifie avec Playwright à 360, 768 et 1280 px : état vide, puis chargement de
 ```
 
 **Vérifications**
-- [ ] Rechercher « poireau » trouve la tarte (critère de recette du MVP).
-- [ ] L'état vide est engageant et les exemples se chargent.
+- [x] Rechercher « poireau » trouve la tarte (critère de recette du MVP).
+- [x] L'état vide est engageant et les exemples se chargent.
 
 ### Étape 5 — E2 : fiche recette
 

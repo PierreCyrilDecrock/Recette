@@ -53,6 +53,11 @@ docs/         cahier des charges et plan de développement
   `ErreurValidation` porte en plus `erreurs` (`{ champ: message }`, à afficher sous chaque champ).
   Le champ technique `indexFavori` (index `favori`) n'existe qu'en base, jamais dans les recettes renvoyées.
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
+- Réglages connus (`lireReglage` / `ecrireReglage`) : `tri` (critère de la liste : `date`, `titre`
+  ou `temps`, voir `CRITERES_TRI`).
+- Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
+  (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
+  tel quel par la fiche et le mode cuisine.
 - Code commenté en français ; noms de variables et de fonctions en français, alignés sur le
   modèle de données (`titre`, `portions`, `tempsPreparation`, `etapes`…).
 - Aucune dépendance d'exécution (les `devDependencies` servent uniquement aux tests et aux outils).

@@ -28,12 +28,47 @@ export const T = {
   // E1 — Liste des recettes
   liste: {
     titre: 'Mes recettes',
-    exemple: 'Ouvrir une recette d’exemple',
+    recherche: 'Rechercher une recette',
+    rechercheIndication: 'Titre, ingrédient, note…',
+    categories: 'Filtrer par catégorie',
+    toutes: 'Toutes',
+    tri: 'Trier par',
+    criteresTri: {
+      date: 'Les plus récentes',
+      titre: 'Titre (A → Z)',
+      temps: 'Temps total',
+    },
+    // Nombre de résultats, annoncé aux lecteurs d'écran
+    resultats: (nombre) => {
+      if (nombre === 0) return 'Aucune recette';
+      return nombre === 1 ? '1 recette' : `${nombre} recettes`;
+    },
+    // État vide : aucune recette enregistrée
+    videTitre: 'Votre carnet est encore vide',
+    videTexte: 'Notez-y vos plats préférés, ou faites le tour de l’app avec quelques recettes d’exemple.',
+    creerPremiere: 'Créer ma première recette',
+    chargerExemples: 'Charger des exemples',
+    chargementExemples: 'Chargement…',
+    // État « aucun résultat » : la recherche ne trouve rien
+    aucunResultatTitre: (requete) => `Aucune recette pour « ${requete} »`,
+    aucunResultatTexte: 'Vérifiez l’orthographe, ou cherchez plutôt un ingrédient.',
+    aucunResultatCategorie: (categorie) => `Aucune recette dans « ${categorie} » ne correspond.`,
+    effacerRecherche: 'Effacer la recherche',
   },
 
   // E1 filtré — Favoris
   favoris: {
     titre: 'Favoris',
+    videTitre: 'Pas encore de favori',
+    videTexte: 'Touchez le cœur d’une recette pour la retrouver ici en un geste.',
+    voirRecettes: 'Voir mes recettes',
+  },
+
+  // Carte d'une recette dans la liste (js/composants/carte-recette.js)
+  carte: {
+    tempsTotal: 'Temps total :',
+    difficulte: (niveau) => `Difficulté : ${niveau}`,
+    favori: 'Favori',
   },
 
   // E2 — Fiche recette

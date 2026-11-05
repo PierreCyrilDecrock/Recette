@@ -20,6 +20,9 @@ import {
   trier,
   trouverIngredientsDansTexte,
   dupliquerRecette,
+  teinteVisuel,
+  initiale,
+  CRITERES_TRI,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -701,5 +704,62 @@ describe('dupliquerRecette', () => {
     assert.equal(copie.titre.length, 120);
     assert.ok(copie.titre.endsWith(' (copie)'));
     assert.equal(validerRecette(copie).valide, true);
+  });
+});
+
+describe('teinteVisuel', () => {
+  test('renvoie une teinte entière entre 0 et 359', () => {
+    for (const id of ['exemple-tarte-poireaux', 'a', '', crypto.randomUUID(), 'é🍰']) {
+      const teinte = teinteVisuel(id);
+      assert.ok(Number.isInteger(teinte) && teinte >= 0 && teinte < 360, `${id} → ${teinte}`);
+    }
+  });
+
+  test('est stable pour un même id', () => {
+    assert.equal(teinteVisuel('exemple-tarte-poireaux'), teinteVisuel('exemple-tarte-poireaux'));
+  });
+
+  test('varie selon l’id', () => {
+    const teintes = new Set(Array.from({ length: 50 }, (_, i) => teinteVisuel(`recette-${i}`)));
+    assert.ok(teintes.size > 30, `seulement ${teintes.size} teintes distinctes`);
+  });
+
+  test('accepte une valeur absente', () => {
+    assert.equal(teinteVisuel(undefined), teinteVisuel(''));
+  });
+});
+
+describe('initiale', () => {
+  test('prend la première lettre du titre, en majuscule', () => {
+    assert.equal(initiale('tarte aux poireaux'), 'T');
+    assert.equal(initiale('Velouté'), 'V');
+    assert.equal(initiale('éclair au café'), 'É');
+    assert.equal(initiale('œufs mimosa'), 'Œ');
+  });
+
+  test('ignore la ponctuation et les espaces de tête', () => {
+    assert.equal(initiale('  « Pain » maison'), 'P');
+    assert.equal(initiale('4 quarts'), '4');
+  });
+
+  test('recompose les accents décomposés', () => {
+    assert.equal(initiale('e\u0301clair'), 'É');
+  });
+
+  test('renvoie une chaîne vide sans lettre', () => {
+    assert.equal(initiale(''), '');
+    assert.equal(initiale('!!!'), '');
+    assert.equal(initiale(undefined), '');
+  });
+});
+
+describe('CRITERES_TRI', () => {
+  test('chaque critère est compris par trier()', () => {
+    const recettes = [
+      creerRecette({ titre: 'B', tempsCuisson: 10, dateCreation: '2026-01-01T00:00:00.000Z' }),
+      creerRecette({ titre: 'A', tempsCuisson: 20, dateCreation: '2026-02-01T00:00:00.000Z' }),
+    ];
+    const ordres = CRITERES_TRI.map((critere) => trier(recettes, critere).map((r) => r.titre).join(''));
+    assert.deepEqual(ordres, ['AB', 'AB', 'BA']);
   });
 });

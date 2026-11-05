@@ -763,3 +763,44 @@ export function trouverIngredientsDansTexte(texte, ingredients) {
     .sort((a, b) => a.debut - b.debut)
     .map(({ debut, fin, indexIngredient }) => ({ debut, fin, indexIngredient }));
 }
+
+// ---------------------------------------------------------------------------
+// Visuel par défaut d'une recette (sans photo)
+// ---------------------------------------------------------------------------
+
+/**
+ * Teinte (0 à 359) du dégradé d'une recette, dérivée de son id (empreinte FNV-1a brassée) :
+ * la même recette garde toujours la même couleur, d'un appareil à l'autre.
+ * @param {string} id
+ * @returns {number}
+ */
+export function teinteVisuel(id) {
+  let empreinte = 0x811c9dc5;
+  for (const caractere of String(id ?? '')) {
+    empreinte ^= caractere.codePointAt(0);
+    empreinte = Math.imul(empreinte, 0x01000193);
+  }
+  // Brassage final (fmix32 de MurmurHash3) : des id voisins (« exemple-… ») donnent
+  // des teintes bien différentes
+  empreinte ^= empreinte >>> 16;
+  empreinte = Math.imul(empreinte, 0x85ebca6b);
+  empreinte ^= empreinte >>> 13;
+  empreinte = Math.imul(empreinte, 0xc2b2ae35);
+  empreinte ^= empreinte >>> 16;
+  // Les bits de poids fort sont les mieux répartis : on les ramène sur 0 à 359
+  return Math.floor(((empreinte >>> 0) / 2 ** 32) * 360);
+}
+
+/**
+ * Initiale affichée sur le visuel : la première lettre ou le premier chiffre du titre,
+ * en majuscule (« « Tarte » » → « T », « œufs » → « Œ »). Renvoie '' s'il n'y en a pas.
+ * @param {string} titre
+ * @returns {string}
+ */
+export function initiale(titre) {
+  const lettre = String(titre ?? '').normalize('NFC').match(/[\p{L}\p{N}]/u)?.[0] ?? '';
+  return lettre.toLocaleUpperCase('fr');
+}
+
+/** Critères de tri acceptés par trier(), dans l'ordre du menu de la liste. */
+export const CRITERES_TRI = Object.freeze(['date', 'titre', 'temps']);

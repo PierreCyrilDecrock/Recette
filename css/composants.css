@@ -375,3 +375,234 @@ textarea.champ__saisie {
     right: calc((100vw - 1200px) / 2 + var(--espace));
   }
 }
+
+/* --------------------------------------------------------------------------
+   Visuel par défaut d'une recette (sans photo) : dégradé dont la teinte vient de
+   l'id (--teinte, posée par js/composants/carte-recette.js) et initiale du titre.
+   Pastel en thème clair, profond en thème sombre ; l'initiale reprend --texte teinté.
+   -------------------------------------------------------------------------- */
+.visuel {
+  --teinte: 30;
+  --visuel-debut: light-dark(oklch(0.9 0.07 var(--teinte)), oklch(0.42 0.08 var(--teinte)));
+  --visuel-fin: light-dark(oklch(0.79 0.11 calc(var(--teinte) + 40)), oklch(0.3 0.07 calc(var(--teinte) + 40)));
+  container-type: inline-size;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, var(--visuel-debut), var(--visuel-fin));
+  color: color-mix(in oklch, var(--texte) 72%, oklch(0.55 0.16 var(--teinte)));
+}
+
+.visuel__initiale {
+  font-size: clamp(2.5rem, 34cqi, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.85;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   Difficulté : 1 à 3 points pleins (role="img" + aria-label sur le conteneur)
+   -------------------------------------------------------------------------- */
+.difficulte {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.difficulte__point {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.difficulte__point--plein {
+  background: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Carte recette (grille de la liste) : un seul lien couvre toute la carte
+   -------------------------------------------------------------------------- */
+.carte-recette {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--ombre);
+  color: var(--texte);
+  text-decoration: none;
+  transition:
+    transform var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+  touch-action: manipulation;
+}
+
+.carte-recette:hover {
+  box-shadow: 0 6px 18px var(--ombre);
+  transform: translateY(-2px);
+}
+
+/* Retour visuel au toucher */
+.carte-recette:active {
+  transform: scale(0.98);
+}
+
+.carte-recette:focus-visible {
+  outline-offset: 3px;
+}
+
+.carte-recette__corps {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px var(--espace) var(--espace);
+}
+
+.carte-recette__titre {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-wrap: pretty;
+}
+
+.carte-recette__infos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+.carte-recette__temps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.carte-recette__temps svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Badge favori, posé en haut à droite du visuel */
+.carte-recette__favori {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--ombre);
+  color: var(--accent);
+}
+
+.carte-recette__favori svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   État vide : illustration légère, titre, texte et actions, centrés
+   -------------------------------------------------------------------------- */
+.etat-vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 24px var(--espace);
+  text-align: center;
+}
+
+.etat-vide__illustration {
+  width: 160px;
+  height: 120px;
+  margin-bottom: 4px;
+}
+
+.etat-vide__illustration--petite {
+  width: 128px;
+  height: 96px;
+}
+
+.etat-vide__fond {
+  fill: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.etat-vide__accent {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.etat-vide__trait,
+.etat-vide__vapeur,
+.etat-vide__accent-trait {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.etat-vide__trait {
+  stroke: var(--texte-doux);
+  stroke-width: 3;
+}
+
+.etat-vide__vapeur {
+  stroke: color-mix(in srgb, var(--accent) 60%, var(--surface));
+  stroke-width: 3;
+}
+
+.etat-vide__accent-trait {
+  stroke: var(--accent);
+  stroke-width: 8;
+}
+
+.etat-vide__titre {
+  font-size: 1.25rem;
+}
+
+.etat-vide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.etat-vide__actions:empty {
+  display: none;
+}
+
+/* Message d'erreur affiché dans une carte (role="alert") */
+.message-erreur {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}

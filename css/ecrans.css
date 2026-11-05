@@ -31,6 +31,108 @@
 /* --------------------------------------------------------------------------
    E1 — Liste des recettes et favoris (js/ecrans/liste.js)
    -------------------------------------------------------------------------- */
+.liste__outils {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--espace);
+}
+
+/* Barre de recherche : loupe posée dans le champ, coins entièrement arrondis */
+.recherche {
+  position: relative;
+}
+
+.recherche__icone {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  translate: 0 -50%;
+  fill: none;
+  stroke: var(--texte-doux);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.recherche__saisie {
+  padding-left: 44px;
+  border-radius: 999px;
+}
+
+/* Les puces débordent jusqu'aux bords de l'écran pour inviter au défilement */
+.liste__puces {
+  margin-inline: calc(-1 * var(--espace));
+  padding: 6px var(--espace);
+  scroll-padding-inline: var(--espace);
+}
+
+.liste__barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.liste__compte {
+  font-size: 0.9375rem;
+}
+
+.tri {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* Sur petit écran, le libellé « Trier par » reste lu mais n'est plus affiché :
+   le nombre de résultats et le menu tiennent ainsi sur une seule ligne */
+@media (max-width: 479.98px) {
+  .tri__libelle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.tri__menu {
+  min-height: var(--cible);
+  padding: 8px 12px;
+  border: 1px solid var(--texte-doux);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--texte);
+  font-size: 1rem;
+}
+
+/* Grille : 2 colonnes sur mobile, 3 dès 768 px, 4 dès 1024 px */
+.grille-recettes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .grille-recettes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--espace);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grille-recettes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 
 /* --------------------------------------------------------------------------
    E2 — Fiche recette (js/ecrans/fiche.js)
