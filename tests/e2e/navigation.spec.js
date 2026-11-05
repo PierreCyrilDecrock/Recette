@@ -108,6 +108,9 @@ test('le thème suit le système et peut être forcé', async ({ page }) => {
 
 test('les cibles tactiles de la coquille mesurent au moins 44 px', async ({ page }) => {
   await page.goto('./');
+  // Attendre la fin de l'animation d'apparition de l'écran : pendant le glissement,
+  // la position sous-pixel fausse la mesure (43,99997 px au lieu de 44).
+  await page.locator('#app .ecran').evaluate((ecran) => Promise.all(ecran.getAnimations().map((a) => a.finished)));
   const cibles = page.locator('.barre-onglets a, .bouton-flottant, .entete a, #app a, #app button');
   const nombre = await cibles.count();
   expect(nombre).toBeGreaterThan(0);
