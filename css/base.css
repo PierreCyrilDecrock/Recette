@@ -314,10 +314,10 @@ body[data-immersif] .contenu {
    Changement d'écran
    Avec l'API View Transitions (classe transitions-vues posée par app.js), l'ancien écran
    s'efface pendant que le nouveau monte légèrement ; en mode double, seul le détail bouge.
-   Sans elle, chaque écran apparaît par l'animation « apparition ».
+   Sans elle, chaque écran apparaît par l’animation « fondu ».
    -------------------------------------------------------------------------- */
 .ecran {
-  animation: apparition var(--duree) var(--courbe);
+  animation: fondu var(--duree) var(--courbe);
 }
 
 .transitions-vues .ecran {
@@ -328,6 +328,14 @@ body[data-immersif] .contenu {
   from {
     opacity: 0;
     transform: translateY(8px);
+  }
+}
+
+/* Repli sans transition de vue : un simple fondu. Pas de transform, qui ferait de l'écran
+   le repère de ses éléments fixés (barre d'actions de la fiche) le temps de l'animation. */
+@keyframes fondu {
+  from {
+    opacity: 0;
   }
 }
 

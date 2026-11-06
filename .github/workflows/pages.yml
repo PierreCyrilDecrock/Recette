@@ -1,0 +1,98 @@
+# Tests, puis mise en ligne sur GitHub Pages à chaque poussée sur master.
+# Prérequis (une fois) : Settings → Pages → Build and deployment → Source : « GitHub Actions ».
+name: Tests et mise en ligne
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Une seule mise en ligne à la fois ; celle en cours va jusqu'au bout
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: Tests unitaires et de bout en bout
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Outils de développement
+        run: npm ci
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Liste du cache du service worker
+        run: npm run verifier-cache
+
+      - name: Budget JavaScript (< 100 Ko compressé)
+        run: npm run budget
+
+      - name: Navigateur des tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests de bout en bout (mobile et bureau)
+        run: npm run e2e
+
+      - name: Rapport des tests en échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  mise-en-ligne:
+    name: Mise en ligne sur GitHub Pages
+    needs: tests
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # La racine du dépôt, sans les tests, la documentation, les outils de développement
+      # ni leurs fichiers de configuration : seuls les fichiers servis partent en ligne
+      - name: Préparer le site
+        run: |
+          mkdir _site
+          rsync -a ./ _site/ \
+            --exclude '_site/' \
+            --exclude '.git/' --exclude '.github/' --exclude '.gitignore' --exclude '.editorconfig' \
+            --exclude 'tests/' --exclude 'docs/' --exclude 'scripts/' --exclude 'node_modules/' \
+            --exclude 'test-results/' --exclude 'playwright-report/' \
+            --exclude 'package.json' --exclude 'package-lock.json' --exclude 'playwright.config.js' \
+            --exclude 'CLAUDE.md'
+          touch _site/.nojekyll
+          find _site -type f | sort
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploiement
+        uses: actions/deploy-pages@v4

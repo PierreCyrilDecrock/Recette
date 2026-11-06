@@ -116,6 +116,18 @@ export async function afficher(conteneur, params) {
   let minuterieAnnonce = null;
   // Recette ouverte à côté de la liste (mode double), marquée aria-current
   let selection = null;
+  // Cartes déjà construites, par recette : une nouvelle recherche les réutilise au lieu de
+  // les recréer (500 cartes se filtrent ainsi en quelques millisecondes). Une recette
+  // rechargée depuis la base est un nouvel objet : sa carte est reconstruite.
+  const cartesConstruites = new WeakMap();
+  const carte = (recette) => {
+    let item = cartesConstruites.get(recette);
+    if (!item) {
+      item = creerCarteRecette(recette);
+      cartesConstruites.set(recette, item);
+    }
+    return item;
+  };
 
   // --- Outils : recherche, puces de catégories, tri -----------------------------------
   const outils = element('div', 'liste__outils');
@@ -224,7 +236,7 @@ export async function afficher(conteneur, params) {
       : recettes.filter((r) => r.categories?.includes(etat.categorie));
     const resultats = trier(rechercher(parCategorie, etat.requete), tri);
 
-    grille.replaceChildren(...resultats.map(creerCarteRecette));
+    grille.replaceChildren(...resultats.map(carte));
     marquerSelection();
     annoncer(T.liste.resultats(resultats.length), differe);
     zoneEtat.replaceChildren(...(resultats.length === 0 ? [etatAucunResultat()] : []));

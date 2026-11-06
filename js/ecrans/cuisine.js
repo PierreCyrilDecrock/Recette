@@ -209,19 +209,27 @@ export async function afficher(conteneur, params) {
 
   // --- Navigation ----------------------------------------------------------------------------
 
+  // Étape demandée dont le hashchange n'est pas encore arrivé : deux appuis rapides sur →
+  // avancent bien de deux étapes
+  let demandee = null;
+
   /** Va à une étape : nouvelle entrée d'historique, que le routeur passe à mettreAJour. */
   function allerA(etape) {
-    if (etape !== courante) location.hash = urlEtape(etape);
+    if (etape === (demandee ?? courante)) return;
+    demandee = etape;
+    location.hash = urlEtape(etape);
   }
 
   function avancer() {
-    if (courante === ETAPE_FIN) return;
-    allerA(courante === total ? ETAPE_FIN : courante + 1);
+    const depart = demandee ?? courante;
+    if (depart === ETAPE_FIN) return;
+    allerA(depart === total ? ETAPE_FIN : depart + 1);
   }
 
   function reculer() {
-    if (courante === 1) return;
-    allerA(courante === ETAPE_FIN ? total : courante - 1);
+    const depart = demandee ?? courante;
+    if (depart === 1) return;
+    allerA(depart === ETAPE_FIN ? total : depart - 1);
   }
 
   // Quitter : on revient d'abord à l'entrée d'historique où le mode cuisine a commencé, puis
@@ -391,6 +399,8 @@ export async function afficher(conteneur, params) {
     }
     if (nouveaux.portions !== params.portions) return false;
     const etape = lireEtape(nouveaux.etape, total);
+    // L'étape affichée a rattrapé la dernière demandée
+    if (demandee === etape) demandee = null;
     if (panneau.open) panneau.close();
     afficherEtape(etape, Math.sign(rang(etape) - rang(courante)));
     return true;

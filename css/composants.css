@@ -570,6 +570,10 @@ textarea.champ__saisie {
     box-shadow var(--duree) var(--courbe),
     border-color var(--duree) var(--courbe);
   touch-action: manipulation;
+  /* Hors de l'écran, la carte n'est ni mise en page ni peinte : une liste de 500 recettes
+     reste fluide. Son ombre et son contour, qui lui appartiennent, ne sont pas rognés. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 15rem;
 }
 
 @media (hover: hover) {

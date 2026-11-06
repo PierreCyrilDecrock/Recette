@@ -199,7 +199,15 @@
    E2 — Fiche recette (js/ecrans/fiche.js)
    -------------------------------------------------------------------------- */
 .fiche {
-  /* Conteneur : les colonnes suivent la place de la fiche (page ou volet de droite) */
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace);
+}
+
+/* Infos, ingrédients, étapes, notes. Conteneur : les colonnes suivent la place dont dispose
+   la fiche (page ou volet de droite). La barre d'actions, fixée sur mobile, reste en dehors :
+   un conteneur serait le repère de ses descendants fixés. */
+.fiche__corps {
   container-type: inline-size;
   display: flex;
   flex-direction: column;
@@ -471,17 +479,26 @@
   overflow-wrap: anywhere;
 }
 
-/* Barre d'actions : collée en bas, dans la zone du pouce, au-dessus des onglets */
+/* Barre d'actions : fixée en bas, dans la zone du pouce, au-dessus des onglets
+   (le bas de .contenu lui laisse la place) */
 .fiche__actions {
-  position: sticky;
+  position: fixed;
+  right: var(--marge-droite);
   bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace-m));
+  left: var(--marge-gauche);
   z-index: 15;
   display: flex;
   align-items: center;
   gap: var(--espace-m);
-  width: 100%;
   max-width: 32rem;
-  margin: var(--espace-s) auto 0;
+  margin-inline: auto;
+}
+
+/* Les messages éphémères passent au-dessus de la barre d'actions */
+@media (max-width: 1023.98px) {
+  body:has(.fiche__actions) .toasts {
+    bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace-m) + 56px + var(--espace-m));
+  }
 }
 
 .fiche__cuisiner {
@@ -504,10 +521,34 @@
   color: var(--accent);
 }
 
-/* Grand écran : plus de barre d'onglets sous la barre d'actions */
+/* Grand écran : barre d'outils sous le titre, dans le flux ; le menu s'ouvre vers le bas */
 @media (min-width: 1024px) {
   .fiche__actions {
-    bottom: calc(var(--sa-bas) + var(--espace-l));
+    position: static;
+    max-width: none;
+    margin: 0;
+  }
+
+  .fiche__cuisiner {
+    flex: none;
+    min-height: 48px;
+    padding-inline: var(--espace-xl);
+    font-size: 1.0625rem;
+    box-shadow: 0 2px 8px var(--ombre-haute);
+  }
+
+  .fiche__actions .menu__declencheur {
+    width: 48px;
+    height: 48px;
+    box-shadow: var(--ombre-carte);
+  }
+
+  .fiche__actions .menu__liste {
+    top: calc(100% + var(--espace-s));
+    right: auto;
+    bottom: auto;
+    left: 0;
+    transform-origin: top left;
   }
 
   /* À côté de la liste, le retour est inutile */

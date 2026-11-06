@@ -2,78 +2,12 @@
 // L'application est servie dans un sous-dossier (/Recette/, comme sur GitHub Pages) par un
 // petit serveur propre à chaque test, à partir d'une copie : le test de mise à jour peut
 // ainsi modifier les fichiers sans toucher au dépôt.
-import { createServer } from 'node:http';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { extname, join, normalize, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { test, expect } from '@playwright/test';
+import { VERSION, attendreServiceWorker, servirCopie } from './outils/serveur.js';
 
 test.use({ serviceWorkers: 'allow' });
-
-const RACINE = fileURLToPath(new URL('../../', import.meta.url));
-const SOUS_DOSSIER = '/Recette/';
-const VERSION = (await readFile(join(RACINE, 'js', 'app.js'), 'utf8')).match(/const VERSION = '([^']+)'/)[1];
-
-const TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.webmanifest': 'application/manifest+json',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.ico': 'image/x-icon',
-};
-
-/**
- * Copie l'application dans un dossier temporaire et la sert sous /Recette/.
- * @returns {Promise<{ url: string, dossier: string, arreter: () => Promise<void> }>}
- */
-async function servirCopie() {
-  const dossier = await mkdtemp(join(tmpdir(), 'recette-pwa-'));
-  for (const element of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'icones']) {
-    await cp(join(RACINE, element), join(dossier, element), { recursive: true });
-  }
-  const serveur = createServer(async (requete, reponse) => {
-    const chemin = decodeURIComponent(new URL(requete.url, 'http://x').pathname);
-    if (!chemin.startsWith(SOUS_DOSSIER)) {
-      reponse.writeHead(404).end();
-      return;
-    }
-    const relatif = normalize(chemin.slice(SOUS_DOSSIER.length) || 'index.html');
-    if (relatif.startsWith('..') || relatif.split(sep).includes('..')) {
-      reponse.writeHead(403).end();
-      return;
-    }
-    try {
-      const contenu = await readFile(join(dossier, relatif));
-      reponse.writeHead(200, {
-        'Content-Type': TYPES[extname(relatif)] ?? 'application/octet-stream',
-        'Cache-Control': 'no-cache',
-      });
-      reponse.end(contenu);
-    } catch {
-      reponse.writeHead(404).end();
-    }
-  });
-  await new Promise((resoudre) => serveur.listen(0, '127.0.0.1', resoudre));
-  return {
-    // localhost : contexte sécurisé, le service worker est permis sans HTTPS
-    url: `http://localhost:${serveur.address().port}${SOUS_DOSSIER}`,
-    dossier,
-    arreter: async () => {
-      serveur.closeAllConnections();
-      await new Promise((resoudre) => serveur.close(resoudre));
-      await rm(dossier, { recursive: true, force: true });
-    },
-  };
-}
-
-/** Attend que le service worker soit actif et contrôle la page. */
-async function attendreServiceWorker(page) {
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
-}
 
 const nomsCaches = (page) => page.evaluate(() => caches.keys());
 const titreEcran = (page) => page.getByRole('heading', { level: 1 });
@@ -225,4 +159,16 @@ test('mise à jour : bandeau « Recharger », SKIP_WAITING, ancien cache supprim
   await expect(versionAffichee).toHaveText(nouvelle);
   await expect(page.locator('.bandeau-maj')).toHaveCount(0);
   await expect.poll(() => nomsCaches(page)).toEqual([`recette-${nouvelle}`]);
+});
+
+test('installable : Chrome ne relève aucune erreur d’installabilité', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'critères d’installabilité propres à Chromium');
+  await page.goto(`${site.url}#/`);
+  await attendreServiceWorker(page);
+  const cdp = await page.context().newCDPSession(page);
+  const { errors } = await cdp.send('Page.getAppManifest');
+  expect(errors).toEqual([]);
+  const { installabilityErrors } = await cdp.send('Page.getInstallabilityErrors');
+  expect(installabilityErrors).toEqual([]);
+  await cdp.detach();
 });

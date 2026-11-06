@@ -19,7 +19,7 @@ import { icone } from './icones.js';
  * chaque publication. sw.js en porte une copie (le navigateur ne détecte une mise à jour que
  * si sw.js change) : npm run verifier-cache échoue si elles diffèrent.
  */
-export const VERSION = '0.1.0';
+export const VERSION = '1.0.0';
 
 /**
  * Table des routes. Le motif s'applique au chemin situé après « # ».
@@ -60,8 +60,12 @@ let volet = null;
 let garderFocus = false;
 // Numéro de la navigation en cours : ignore les chargements devenus obsolètes
 let numeroNavigation = 0;
-// Le premier affichage ne déplace pas le focus (la page vient de s'ouvrir)
-let premierAffichage = true;
+/**
+ * Vrai pendant la toute première navigation : la page vient de s'ouvrir, le focus ne bouge
+ * pas et il n'y a pas de transition. Une navigation commencée avant la fin du premier
+ * affichage (clic rapide sur un onglet) n'est plus la première : elle déplace le focus.
+ */
+const premierAffichage = () => numeroNavigation === 1;
 
 // Route et paramètres de l'écran affiché (mise à jour sur place)
 let routeCourante = null;
@@ -155,10 +159,7 @@ function annoncerEcran(zone = conteneur) {
   const titre = zone.querySelector('h1');
   document.title = titre ? T.app.titreDocument(titre.textContent) : T.app.nom;
   window.scrollTo(0, 0);
-  if (premierAffichage || garderFocus) {
-    premierAffichage = false;
-    return;
-  }
+  if (premierAffichage() || garderFocus) return;
   const cible = titre ?? conteneur;
   if (!cible.hasAttribute('tabindex')) cible.setAttribute('tabindex', '-1');
   cible.focus({ preventScroll: true });
@@ -434,12 +435,12 @@ function creerInvitation() {
 /**
  * Change d'écran dans une transition de vue (fondu entre l'ancien et le nouvel écran)
  * quand le navigateur la connaît et que l'utilisateur accepte le mouvement. Sinon, la
- * mise à jour est directe et chaque écran apparaît par l'animation CSS « apparition ».
+ * mise à jour est directe et chaque écran apparaît par l'animation CSS « fondu ».
  * @param {() => Promise<void>} miseAJour
  * @returns {Promise<void>} résolue (ou rejetée) avec la mise à jour
  */
 function avecTransition(miseAJour) {
-  if (premierAffichage || garderFocus || typeof document.startViewTransition !== 'function' || mouvementReduit.matches) {
+  if (premierAffichage() || garderFocus || typeof document.startViewTransition !== 'function' || mouvementReduit.matches) {
     return miseAJour();
   }
   const transition = document.startViewTransition(miseAJour);

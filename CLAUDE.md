@@ -33,8 +33,10 @@ js/
   composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js,
                 liste-ingredients.js
 icones/       icônes de l'app (PWA) : source icone.svg, PNG et favicons générés
-scripts/      outils de dev : icones.mjs (génère les icônes), verifier-cache.mjs
-tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
+scripts/      outils de dev : icones.mjs (génère les icônes), verifier-cache.mjs, budget.mjs
+tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js),
+              tests/e2e/outils/ (serveur.js : copie de l'app servie sous /Recette/)
+.github/      workflows/pages.yml : tests puis mise en ligne sur GitHub Pages
 docs/         cahier des charges et plan de développement
 ```
 
@@ -68,7 +70,7 @@ docs/         cahier des charges et plan de développement
   le focus. La barre d'onglets et « Nouvelle recette » passent dans l'en-tête (`index.html` :
   marque, onglets, « + », dans cet ordre).
 - Changement d'écran : `document.startViewTransition` quand il existe (classe `transitions-vues`
-  sur `<html>`, noms `contenu` et `detail`), sinon l'animation CSS `apparition` de `.ecran` ;
+  sur `<html>`, noms `contenu` et `detail`), sinon le fondu CSS (`fondu`) de `.ecran` ;
   ni l'un ni l'autre en `prefers-reduced-motion`. Pendant une transition (≈ 200 ms), le
   navigateur adresse les événements à `<html>` : un test qui envoie des événements bruts
   attend `!document.activeViewTransition`.
@@ -106,8 +108,9 @@ docs/         cahier des charges et plan de développement
   `app.js` affiche le bandeau « Nouvelle version disponible — Recharger », qui envoie
   `{ type: 'SKIP_WAITING' }` puis recharge à `controllerchange`. En local, le cache sert les
   anciens fichiers : cocher « Update on reload » dans les DevTools, ou changer `VERSION`.
-  Les tests Playwright bloquent le service worker (`serviceWorkers: 'block'`), sauf
-  `tests/e2e/hors-ligne.spec.js`.
+  Les tests Playwright bloquent le service worker (`serviceWorkers: 'block'`), sauf les tests
+  hors ligne (`hors-ligne.spec.js`, critère 6 de `criteres-mvp.spec.js`), qui servent une copie
+  de l'app sous `/Recette/` avec `servirCopie()` de `tests/e2e/outils/serveur.js`.
 - Icônes : seule `icones/icone.svg` se modifie à la main ; `npm run icones` régénère les PNG
   (192, 512, maskable 512, Apple 180), `favicon.svg` et `favicon.ico`.
 - Sélecteur de portions : `creerSelecteurPortions({ valeur })` renvoie l'élément (propriété `valeur`),
@@ -198,8 +201,29 @@ docs/         cahier des charges et plan de développement
 | Servir l'app | `npm run serve` (ou `python3 -m http.server 8000`) |
 | Tests unitaires | `npm test` (`node --test`, Node ≥ 22) |
 | Tests de bout en bout | `npm run e2e` (Playwright, dossier `tests/e2e/`) |
+| Budget JavaScript (< 100 Ko gzip) | `npm run budget` |
+| Lighthouse (mobile) | `CHROME_PATH=… npx lighthouse@13.6.0 http://localhost:8000/` |
 | Vérifier la liste du cache | `npm run verifier-cache` |
 | Régénérer les icônes | `npm run icones` |
+
+## Qualité et mise en ligne
+
+- Critères de recette du MVP : un test par critère automatisable dans
+  `tests/e2e/criteres-mvp.spec.js` (avec la mesure de la recherche sur 500 recettes, < 100 ms
+  dans le navigateur). Les vérifications manuelles restantes sont listées dans le cahier.
+- Accessibilité : `tests/e2e/accessibilite.spec.js` passe axe-core (`@axe-core/playwright`,
+  WCAG 2.0 à 2.2 A/AA) sur chaque écran en clair et en sombre — zéro violation sérieuse ou
+  critique — et rejoue le parcours complet au clavier seul (focus visible à chaque arrêt).
+  Tout nouvel écran ou état (fenêtre, panneau) y est ajouté.
+- Liste : les cartes sont mises en cache par recette (`WeakMap`) et portent
+  `content-visibility: auto` ; la recherche ne reconstruit ni ne met en page les cartes hors écran.
+- Fiche : barre d'actions fixée en bas sous 1024 px (dans la zone du pouce), barre d'outils sous
+  le titre au-delà ; elle reste hors du conteneur `.fiche__corps` (container queries).
+- Fenêtres de confirmation : ne pas se fier à un seul `close` (envoyé après coup) ; voir
+  `repondre()` dans `edition.js`.
+- Mise en ligne : chaque poussée sur `master` lance `.github/workflows/pages.yml` (tests
+  unitaires, cache, budget, e2e), puis publie la racine sans `tests/`, `docs/`, `scripts/`,
+  `node_modules/` ni les fichiers de configuration. Changer `VERSION` à chaque publication.
 
 ## Définition de « terminé » pour une étape
 

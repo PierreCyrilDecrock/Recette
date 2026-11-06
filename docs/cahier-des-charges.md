@@ -212,16 +212,26 @@ Le développement avance en quatre lots ; chacun doit être utilisable seul avan
 
 Le lot 1 est le seul indispensable : il suffit à remplacer un cahier de recettes papier.
 
-Critères de recette du MVP :
+Critères de recette du MVP (état au 6 novembre 2026, version 1.0.0) :
 
 - [ ] Créer une recette complète (titre, difficulté, temps, 5 ingrédients, 4 étapes) en moins de 3 minutes sur téléphone.
+  *Saisie complète testée automatiquement (`criteres-mvp.spec.js`, critère 1) ; durée de moins de 3 minutes à vérifier sur un vrai téléphone.*
 - [ ] La recette réapparaît intacte après fermeture du navigateur et redémarrage du téléphone.
-- [ ] Passer de 4 à 6 portions multiplie les quantités par 1,5 avec un arrondi lisible.
-- [ ] Chercher « poireau » trouve les recettes qui le contiennent dans le titre ou les ingrédients.
+  *Fermeture puis réouverture du navigateur testées automatiquement (profil persistant, critère 2) ; redémarrage du téléphone à vérifier à la main.*
+- [x] Passer de 4 à 6 portions multiplie les quantités par 1,5 avec un arrondi lisible. *(critère 3)*
+- [x] Chercher « poireau » trouve les recettes qui le contiennent dans le titre ou les ingrédients. *(critère 4)*
 - [ ] Le mode cuisine garde l'écran allumé 10 minutes et se parcourt par swipe.
-- [ ] En mode avion, l'app installée s'ouvre et toutes les fonctions du MVP marchent.
-- [ ] Un export JSON puis un import dans un autre navigateur restituent toutes les recettes.
-- [ ] Lighthouse : Performance ≥ 90, Accessibilité ≥ 95, application installable.
+  *Balayage et demande de Wake Lock (puis libération) testés automatiquement (critère 5) ; écran allumé 10 minutes à vérifier sur un vrai téléphone.*
+- [x] En mode avion, l'app installée s'ouvre et toutes les fonctions du MVP marchent. *(critère 6 et `hors-ligne.spec.js` ; installabilité vérifiée par Chrome)*
+- [x] Un export JSON puis un import dans un autre navigateur restituent toutes les recettes. *(critère 7)*
+- [x] Lighthouse : Performance ≥ 90, Accessibilité ≥ 95, application installable.
+  *Lighthouse 13.6 en mode mobile : Performance 100, Accessibilité 100 ; installabilité vérifiée par le test `hors-ligne.spec.js` (Lighthouse 13 n'a plus de catégorie PWA).*
+
+Vérifications manuelles sur un vrai téléphone (non automatisables) :
+
+1. Saisir une recette complète (titre, difficulté, temps, 5 ingrédients, 4 étapes) en moins de 3 minutes.
+2. Redémarrer le téléphone, rouvrir l'app installée : la recette est intacte.
+3. Laisser le mode cuisine ouvert 10 minutes sans toucher l'écran : il ne se met pas en veille.
 
 ## Sources
 

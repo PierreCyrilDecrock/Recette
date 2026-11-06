@@ -665,6 +665,28 @@ export async function afficher(conteneur, params) {
     bandeau = null;
   }
 
+  // Réponse attendue de la fenêtre de confirmation (une seule question à la fois)
+  let reponseEnAttente = null;
+
+  /** Donne sa réponse à la question en cours : « quitter » autorise la sortie. */
+  function repondre(quitter) {
+    const resoudre = reponseEnAttente;
+    if (!resoudre) return;
+    reponseEnAttente = null;
+    if (quitter) {
+      sortieAutorisee = true;
+      mettreAJourAvertissement();
+      oublierBrouillon();
+    }
+    resoudre(quitter);
+  }
+
+  // L'événement « close » est envoyé après coup : s'il arrive alors que la fenêtre a déjà été
+  // rouverte (Échap, puis aussitôt le bouton retour), il est périmé et ignoré
+  dialogueSortie.addEventListener('close', () => {
+    if (!dialogueSortie.open) repondre(dialogueSortie.returnValue === 'quitter');
+  });
+
   /**
    * Garde de sortie (routeur, Annuler) : vrai tout de suite s'il n'y a rien à perdre,
    * sinon une promesse résolue après la réponse à la fenêtre de confirmation.
@@ -673,19 +695,13 @@ export async function afficher(conteneur, params) {
   function confirmerSortie() {
     if (sortieAutorisee || !actif || !modifie()) return true;
     if (dialogueSortie.open) return Promise.resolve(false);
+    // Question précédente fermée, dont l'événement « close » n'est pas encore arrivé
+    repondre(dialogueSortie.returnValue === 'quitter');
+    if (sortieAutorisee) return true;
     dialogueSortie.returnValue = '';
     dialogueSortie.showModal();
     return new Promise((resoudre) => {
-      dialogueSortie.addEventListener('close', () => {
-        if (dialogueSortie.returnValue !== 'quitter') {
-          resoudre(false);
-          return;
-        }
-        sortieAutorisee = true;
-        mettreAJourAvertissement();
-        oublierBrouillon();
-        resoudre(true);
-      }, { once: true });
+      reponseEnAttente = resoudre;
     });
   }
 

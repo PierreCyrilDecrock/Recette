@@ -199,7 +199,11 @@ export async function afficher(conteneur, params) {
 
   const dialogue = creerDialogueSuppression(recette.titre);
 
-  section.append(entete, infos, colonnes, ...complements, actions, dialogue);
+  // Les actions suivent le titre (ordre du clavier et barre d'outils sur grand écran) ; sur
+  // mobile, elles sont fixées en bas de l'écran, dans la zone du pouce
+  const corps = element('div', 'fiche__corps');
+  corps.append(infos, colonnes, ...complements);
+  section.append(entete, actions, corps, dialogue);
 
   /** Le mode cuisine reçoit les portions choisies par l'URL. */
   function mettreAJourCuisiner() {

@@ -14,7 +14,7 @@
  * npm run verifier-cache. Elle doit figurer dans ce fichier : le navigateur ne détecte une
  * nouvelle version que si le contenu de sw.js change.
  */
-const VERSION = '0.1.0';
+const VERSION = '1.0.0';
 
 const PREFIXE_CACHE = 'recette-';
 const CACHE = `${PREFIXE_CACHE}${VERSION}`;
