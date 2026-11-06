@@ -71,8 +71,14 @@ docs/         cahier des charges et plan de développement
 - Insérer le texte saisi par l'utilisateur via `textContent`, jamais via `innerHTML`.
 - Réglages connus (`lireReglage` / `ecrireReglage`) : `tri` (critère de la liste : `date`, `titre`
   ou `temps`, voir `CRITERES_TRI`) ; brouillons du formulaire sous `cleBrouillon(id)`
-  (`brouillon:<id>` ou `brouillon:nouvelle`, objet `{ date, etat }`), propres à l'appareil :
-  ni exportés ni importés.
+  (`brouillon:<id>` ou `brouillon:nouvelle`, objet `{ date, etat }`). Les réglages sont propres à
+  l'appareil : ni exportés ni importés.
+- Export / import (E5, `reglages.js`) : fichier `recettes-AAAA-MM-JJ.json` (`nomFichierExport`) au
+  format `{ app: "recette", version: 1, dateExport, recettes, categories }` (`FORMAT_EXPORT`,
+  catégories en noms). Un fichier importé passe par `analyserImport` (format, version, chaque
+  recette par `validerRecette` → `recettes` valides et `invalides` listées) ; `toutImporter` en
+  mode `fusionner` (version la plus récente gardée) ou `remplacer`.
+- Version de l'app : constante unique `VERSION` exportée par `js/app.js`.
 - Sélecteur de portions : `creerSelecteurPortions({ valeur })` renvoie l'élément (propriété `valeur`),
   qui émet `EVENEMENT_PORTIONS` (`detail.portions`). Les portions choisies sur la fiche ne sont
   jamais enregistrées : elles passent au mode cuisine par l'URL.
@@ -121,7 +127,9 @@ docs/         cahier des charges et plan de développement
   `--danger` et `--ombre`. Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1 (ratios notés
   dans `css/base.css`).
 - Thème : `light-dark()` + `color-scheme` suivent le système ; `data-theme="clair|sombre"` sur
-  `<html>` force l'un des deux.
+  `<html>` force l'un des deux. Choix mémorisé dans `localStorage` (`recette.theme`, absent =
+  système), seule exception à IndexedDB : le script en ligne de `index.html` doit le lire de façon
+  synchrone pour l'appliquer avant le premier rendu (mêmes clé et couleurs que `reglages.js`).
 - Cartes : coins arrondis de 16 px, marges internes de 16 px, ombre légère ou bordure fine.
 - Typographie : `ui-rounded, system-ui, sans-serif` ; corps du texte ≥ 16 px.
 - Transitions de 150 à 250 ms ; tout mouvement désactivé avec `prefers-reduced-motion`.

@@ -9,7 +9,7 @@
 // Les erreurs remontent sous forme d'ErreurStockage, avec un message de textes.js.
 
 import { T } from './textes.js';
-import { creerRecette, validerRecette } from './modele.js';
+import { FORMAT_EXPORT, analyserImport, validerRecette } from './modele.js';
 
 const NOM_BASE = 'recette';
 const VERSION_BASE = 1;
@@ -22,8 +22,8 @@ const CHAMP_INDEX_FAVORI = 'indexFavori';
 // Réglage technique : résultat de navigator.storage.persist(), conservé par toutEffacer()
 const REGLAGE_PERSISTANCE = 'persistance';
 
-/** Format des fichiers d'export. */
-export const FORMAT_EXPORT = Object.freeze({ application: 'recette', version: 1 });
+/** Format des fichiers d'export (défini dans modele.js, réexporté ici). */
+export { FORMAT_EXPORT };
 
 // ---------------------------------------------------------------------------
 // Erreurs
@@ -417,9 +417,6 @@ export function cleBrouillon(id) {
   return `${PREFIXE_BROUILLON}${id ?? 'nouvelle'}`;
 }
 
-/** Réglage propre à cet appareil, exclu de l'export et de l'import. */
-const estReglageLocal = (cle) => cle === REGLAGE_PERSISTANCE || String(cle).startsWith(PREFIXE_BROUILLON);
-
 /** Promesse de la demande de persistance, pour ne la faire qu'une fois. */
 let demandePersistance = null;
 
@@ -462,18 +459,16 @@ async function blobEnDataUrl(blob) {
 }
 
 /**
- * Exporte toutes les données dans un objet sérialisable en JSON : recettes (photos en
- * data URL), catégories et réglages (sauf les réglages propres à l'appareil : persistance,
- * brouillons).
- * @returns {Promise<{ application: string, version: number, dateExport: string,
- *   recettes: object[], categories: { nom: string }[], reglages: Object<string, *> }>}
+ * Exporte recettes (photos en data URL) et catégories dans un objet sérialisable en JSON.
+ * Les réglages (tri, brouillons, persistance) et le thème sont propres à l'appareil : ils
+ * ne sont pas exportés.
+ * @returns {Promise<{ app: string, version: number, dateExport: string,
+ *   recettes: object[], categories: string[] }>}
  */
 export async function toutExporter() {
-  const { recettes, categories, cles, valeurs } = await transaction(MAGASINS, 'readonly', async (m) => ({
+  const { recettes, categories } = await transaction(['recettes', 'categories'], 'readonly', async (m) => ({
     recettes: await attendre(m.recettes.getAll()),
     categories: await attendre(m.categories.getAll()),
-    cles: await attendre(m.reglages.getAllKeys()),
-    valeurs: await attendre(m.reglages.getAll()),
   }));
   // Les conversions asynchrones se font après la transaction
   const recettesExportees = [];
@@ -482,58 +477,45 @@ export async function toutExporter() {
     if (typeof Blob !== 'undefined' && recette.photo instanceof Blob) recette.photo = await blobEnDataUrl(recette.photo);
     recettesExportees.push(recette);
   }
-  const reglages = {};
-  cles.forEach((cle, i) => {
-    if (!estReglageLocal(cle)) reglages[cle] = valeurs[i];
-  });
-  return { ...FORMAT_EXPORT, dateExport: maintenant(), recettes: recettesExportees, categories, reglages };
+  return {
+    ...FORMAT_EXPORT,
+    dateExport: maintenant(),
+    recettes: recettesExportees,
+    categories: categories.map((c) => c.nom).sort(COLLATEUR.compare),
+  };
 }
 
 /**
- * Importe des données exportées (ou une simple liste de recettes), dans une seule
- * transaction : en cas d'erreur, rien n'est importé.
+ * Importe un fichier exporté (ou une simple liste de recettes), dans une seule transaction :
+ * en cas d'erreur, rien n'est importé. Le fichier est d'abord analysé par analyserImport.
  * - « fusionner » (par défaut) : ajoute les recettes ; pour un id déjà présent, garde la
- *   version modifiée le plus récemment ; n'écrase pas les réglages existants ;
+ *   version modifiée le plus récemment ;
  * - « remplacer » : efface d'abord recettes et catégories, puis importe tout.
- * Les recettes invalides sont ignorées et comptées.
- * @param {object|object[]} donnees
+ * Les recettes invalides sont ignorées et comptées. Les réglages ne sont pas touchés.
+ * @param {unknown} donnees
  * @param {{ mode?: 'fusionner'|'remplacer' }} [options]
  * @returns {Promise<{ importees: number, ignorees: number, invalides: number }>}
  *   ignorees : recettes plus anciennes que la version locale (fusion)
- * @throws {ErreurStockage} codes « importInvalide », « modeImport »
+ * @throws {ErreurStockage} codes « importInvalide », « versionImport », « modeImport »
  */
 export async function toutImporter(donnees, { mode = 'fusionner' } = {}) {
   if (mode !== 'fusionner' && mode !== 'remplacer') {
     throw new ErreurStockage(T.stockage.modeImport, { code: 'modeImport' });
   }
-  const source = Array.isArray(donnees) ? { recettes: donnees } : donnees;
-  if (!source || typeof source !== 'object' || !Array.isArray(source.recettes)) {
-    throw new ErreurStockage(T.stockage.importInvalide, { code: 'importInvalide' });
+  const analyse = analyserImport(donnees);
+  if (analyse.erreur === 'version') {
+    throw new ErreurStockage(T.stockage.versionImport, { code: 'versionImport' });
   }
+  if (analyse.erreur) throw new ErreurStockage(T.stockage.importInvalide, { code: 'importInvalide' });
 
-  // Validation avant la transaction : creerRecette complète les champs manquants
-  // sans toucher à l'id ni aux dates fournis.
-  const valides = [];
-  for (const brute of source.recettes) {
-    if (!brute || typeof brute !== 'object') continue;
-    const recette = depuisStockage(creerRecette(brute));
-    if (validerRecette(recette).valide) valides.push(recette);
-  }
-  const invalides = source.recettes.length - valides.length;
-  const categoriesImportees = (Array.isArray(source.categories) ? source.categories : [])
-    .map((c) => (typeof c === 'string' ? { nom: c } : c))
-    .filter((c) => typeof c?.nom === 'string' && c.nom.trim() !== '')
-    .map((c) => ({ ...c, nom: c.nom.trim() }));
-  const reglagesImportes = source.reglages && typeof source.reglages === 'object' ? source.reglages : {};
-
-  return transaction(MAGASINS, 'readwrite', async ({ recettes, categories, reglages }) => {
+  return transaction(['recettes', 'categories'], 'readwrite', async ({ recettes, categories }) => {
     if (mode === 'remplacer') {
       recettes.clear();
       categories.clear();
     }
     let importees = 0;
     let ignorees = 0;
-    for (const recette of valides) {
+    for (const recette of analyse.recettes) {
       if (mode === 'fusionner') {
         const existante = await attendre(recettes.get(recette.id));
         if (existante && existante.dateModification > recette.dateModification) {
@@ -544,16 +526,11 @@ export async function toutImporter(donnees, { mode = 'fusionner' } = {}) {
       recettes.put(versStockage(recette));
       importees += 1;
     }
-    for (const categorie of categoriesImportees) {
-      if ((await attendre(categories.count(categorie.nom))) === 0) categories.put(categorie);
-    }
-    await creerCategoriesManquantes(categories, valides.flatMap((r) => r.categories));
-    for (const [cle, valeur] of Object.entries(reglagesImportes)) {
-      if (estReglageLocal(cle) || valeur === undefined) continue;
-      if (mode === 'fusionner' && (await attendre(reglages.count(cle))) > 0) continue;
-      reglages.put(valeur, cle);
-    }
-    return { importees, ignorees, invalides };
+    await creerCategoriesManquantes(categories, [
+      ...analyse.categories,
+      ...analyse.recettes.flatMap((r) => r.categories),
+    ]);
+    return { importees, ignorees, invalides: analyse.invalides.length };
   });
 }
 

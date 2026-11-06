@@ -35,6 +35,10 @@ import {
   lireEtape,
   ETAPE_FIN,
   sensGlissement,
+  FORMAT_EXPORT,
+  nomFichierExport,
+  analyserImport,
+  formaterMo,
 } from '../js/modele.js';
 import { T } from '../js/textes.js';
 
@@ -1111,5 +1115,82 @@ describe('sensGlissement', () => {
   test('valeurs invalides : aucun changement', () => {
     assert.equal(sensGlissement({ dx: Number.NaN, duree: 100, largeur: 360 }), 0);
     assert.equal(sensGlissement({ dx: -50, duree: 0, largeur: 360 }), 0);
+  });
+});
+
+describe('nomFichierExport', () => {
+  test('daté du jour local, mois et jour sur deux chiffres', () => {
+    assert.equal(nomFichierExport(new Date(2026, 10, 6, 23, 59)), 'recettes-2026-11-06.json');
+    assert.equal(nomFichierExport(new Date(2027, 0, 1, 0, 0)), 'recettes-2027-01-01.json');
+  });
+});
+
+describe('analyserImport', () => {
+  const fichier = (recettes, surcharge = {}) => ({ ...FORMAT_EXPORT, dateExport: new Date().toISOString(), recettes, categories: [], ...surcharge });
+
+  test('format et version vérifiés', () => {
+    assert.equal(FORMAT_EXPORT.app, 'recette');
+    assert.equal(FORMAT_EXPORT.version, 1);
+    for (const donnees of [null, 42, 'texte', {}, { recettes: [] }, { app: 'autre', version: 1, recettes: [] },
+      { app: 'recette', recettes: [] }, { app: 'recette', version: '1', recettes: [] },
+      { app: 'recette', version: 1 }, { app: 'recette', version: 1, recettes: {} }]) {
+      assert.equal(analyserImport(donnees).erreur, 'format', JSON.stringify(donnees));
+    }
+    const plusRecent = analyserImport(fichier([], { version: 2 }));
+    assert.deepEqual(plusRecent, { erreur: 'version', recettes: [], invalides: [], categories: [] });
+    assert.equal(analyserImport(fichier([])).erreur, null);
+  });
+
+  test('recettes valides complétées, invalides listées avec leurs erreurs', () => {
+    const valide = recetteValide({ id: 'a', favori: true });
+    const analyse = analyserImport(fichier([
+      valide,
+      { id: 'b', titre: '  Sans étapes ', ingredients: [{ nom: 'sel' }], etapes: [] },
+      'pas une recette',
+      { id: 'c', titre: 'Minimale', ingredients: [{ nom: 'sel' }], etapes: [{ texte: 'Saler.' }] },
+      { ingredients: [{ nom: 'sel' }], etapes: [{ texte: 'Saler.' }], portions: 0 },
+    ]));
+    assert.equal(analyse.erreur, null);
+    assert.deepEqual(analyse.recettes.map((r) => r.id), ['a', 'c']);
+    assert.deepEqual(analyse.recettes[0], valide, 'une recette valide est reprise telle quelle');
+    assert.equal(analyse.recettes[1].portions, 4);
+    assert.deepEqual(analyse.invalides.map(({ position, titre }) => ({ position, titre })), [
+      { position: 2, titre: 'Sans étapes' },
+      { position: 3, titre: '' },
+      { position: 5, titre: '' },
+    ]);
+    assert.deepEqual(analyse.invalides[0].erreurs, [T.validation.etapesObligatoires]);
+    assert.deepEqual(analyse.invalides[1].erreurs, [T.validation.recetteIllisible]);
+    assert.ok(analyse.invalides[2].erreurs.includes(T.validation.titreObligatoire));
+  });
+
+  test('catégories nettoyées (chaînes ou objets { nom }), liste simple acceptée', () => {
+    const analyse = analyserImport(fichier([], { categories: [' Plat ', { nom: 'Dessert' }, 'Plat', '', 3, null] }));
+    assert.deepEqual(analyse.categories, ['Plat', 'Dessert']);
+    const liste = analyserImport([recetteValide()]);
+    assert.equal(liste.erreur, null);
+    assert.equal(liste.recettes.length, 1);
+  });
+
+  test('ne modifie pas les données reçues', () => {
+    const donnees = fichier([{ id: 'x', titre: 'Brute', ingredients: [{ nom: 'sel' }], etapes: [{ texte: 'Saler.' }] }]);
+    const copie = structuredClone(donnees);
+    analyserImport(donnees);
+    assert.deepEqual(donnees, copie);
+  });
+});
+
+describe('formaterMo', () => {
+  test('une décimale sous 100 Mo, espaces insécables', () => {
+    assert.equal(formaterMo(0), `0${E}Mo`);
+    assert.equal(formaterMo(1024 * 1024), `1${E}Mo`);
+    assert.equal(formaterMo(1.25 * 1024 * 1024), `1,3${E}Mo`);
+    assert.equal(formaterMo(400 * 1024), `0,4${E}Mo`);
+    assert.equal(formaterMo(2048 * 1024 * 1024), `2${E}048${E}Mo`);
+    assert.equal(formaterMo(150.6 * 1024 * 1024), `151${E}Mo`);
+  });
+
+  test('valeur invalide : chaîne vide', () => {
+    for (const valeur of [undefined, null, -1, Number.NaN, '12']) assert.equal(formaterMo(valeur), '');
   });
 });

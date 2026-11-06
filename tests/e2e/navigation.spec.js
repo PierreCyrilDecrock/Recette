@@ -66,10 +66,10 @@ test('les routes à paramètre transmettent leur identifiant et leur requête', 
   // La fiche n'est pas un onglet : aucun n'est actif
   await expect(page.locator('.barre-onglets [aria-current]')).toHaveCount(0);
 
-  // Les paramètres de requête arrivent en chaînes, avec ceux du motif (écran provisoire des réglages)
+  // Une requête inconnue est sans effet sur l'écran
   await page.goto('./#/reglages?section=theme');
-  await expect(page.locator('.parametres dt')).toHaveText(['section']);
-  await expect(page.locator('.parametres dd')).toHaveText(['theme']);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Réglages');
+  await expect(onglet(page, 'Réglages')).toHaveAttribute('aria-current', 'page');
 
   // Mode cuisine : immersif, même pour un identifiant inconnu
   await page.goto('./#/cuisine/tarte%20aux%20poireaux?portions=6');

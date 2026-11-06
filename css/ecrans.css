@@ -9,25 +9,6 @@
   margin-bottom: var(--espace);
 }
 
-/* Provisoire (étape 1) : écrans d'attente, voir js/ecrans/provisoire.js */
-.parametres {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 16px;
-}
-
-.parametres dt {
-  font-weight: 600;
-}
-
-.parametres dd {
-  overflow-wrap: anywhere;
-}
-
-.actions-provisoires {
-  margin-top: var(--espace);
-}
-
 /* --------------------------------------------------------------------------
    E1 — Liste des recettes et favoris (js/ecrans/liste.js)
    -------------------------------------------------------------------------- */
@@ -913,7 +894,175 @@ body:has(.cuisine) .entete {
   }
 }
 
-
 /* --------------------------------------------------------------------------
    E5 — Réglages (js/ecrans/reglages.js)
    -------------------------------------------------------------------------- */
+.reglages__blocs,
+.reglages__colonne {
+  display: grid;
+  align-content: start;
+  gap: var(--espace);
+}
+
+.reglages__bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reglages__bloc-titre {
+  font-size: 1.25rem;
+}
+
+/* Catégories : une ligne par catégorie (nom, nombre de recettes, actions) */
+.reglages__categories {
+  display: flex;
+  flex-direction: column;
+}
+
+.reglages__categorie {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: calc(var(--cible) + 12px);
+  padding-block: 6px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.reglages__categorie:last-child {
+  border-bottom: 0;
+}
+
+.reglages__categorie-textes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.reglages__categorie-nom {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reglages__categorie-nombre {
+  color: var(--texte-doux);
+  font-size: 0.9375rem;
+}
+
+/* Pendant le renommage, le champ prend la place des boutons d'action */
+.reglages__categorie--edition .bouton--icone {
+  display: none;
+}
+
+.reglages__renommer {
+  margin-block: 2px;
+}
+
+/* Création : champ et bouton sur une ligne, bouton aligné sur le champ */
+.reglages__creation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.reglages__creation-champ {
+  flex: 1 1 12rem;
+}
+
+.reglages__creation .bouton {
+  /* Hauteur du libellé + espacement : le bouton s'aligne sur la saisie */
+  margin-top: calc(1.5em + 6px);
+}
+
+/* Données : actions empilées, pleine largeur sur mobile */
+.reglages__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reglages__actions > .champ__aide {
+  margin-top: -6px;
+}
+
+/* Le champ fichier est caché : son libellé en forme de bouton porte le focus visible */
+.reglages__import {
+  cursor: pointer;
+}
+
+.reglages__import:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.reglages__effacer {
+  margin-top: 8px;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.reglages__effacer:hover {
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+}
+
+/* À propos : libellé puis valeur */
+.reglages__infos {
+  display: flex;
+  flex-direction: column;
+}
+
+.reglages__info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 16px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.reglages__info:last-child {
+  border-bottom: 0;
+}
+
+.reglages__info dt {
+  font-weight: 600;
+}
+
+.reglages__info dd {
+  margin: 0;
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fenêtres de l'écran : texte en plusieurs paragraphes, liste des recettes invalides */
+.reglages__dialogue-texte {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reglages__resume {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.reglages__invalides {
+  max-height: 12rem;
+  overflow-y: auto;
+  padding-inline-start: 1.25rem;
+  font-size: 0.9375rem;
+}
+
+@media (min-width: 1024px) {
+  .reglages__blocs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reglages__actions {
+    align-items: flex-start;
+  }
+}

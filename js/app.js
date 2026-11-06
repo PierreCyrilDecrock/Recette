@@ -10,6 +10,9 @@
 
 import { T } from './textes.js';
 
+/** Version de l'application (affichée dans les réglages). Seule source de vérité. */
+export const VERSION = '0.1.0';
+
 /**
  * Table des routes. Le motif s'applique au chemin situé après « # ».
  * - ecran : fichier de js/ecrans/ à charger ;

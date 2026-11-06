@@ -18,13 +18,6 @@ export const T = {
     reessayer: 'Réessayer',
   },
 
-  // Texte commun aux écrans provisoires (remplacés au fil des étapes)
-  provisoire: {
-    enConstruction: 'Écran en construction.',
-    parametres: 'Paramètres de la route',
-    aucunParametre: 'Aucun paramètre.',
-  },
-
   // E1 — Liste des recettes
   liste: {
     titre: 'Mes recettes',
@@ -269,6 +262,92 @@ export const T = {
   // E5 — Réglages
   reglages: {
     titre: 'Réglages',
+    // Thème
+    apparence: 'Apparence',
+    theme: 'Thème',
+    themes: { clair: 'Clair', sombre: 'Sombre', systeme: 'Système' },
+    themeAide: '« Système » suit le réglage de votre appareil.',
+    // Catégories
+    categories: 'Catégories',
+    aucuneCategorie: 'Aucune catégorie pour l’instant.',
+    nombreRecettes: (nombre) => {
+      if (nombre === 0) return 'Aucune recette';
+      return nombre === 1 ? '1 recette' : `${nombre} recettes`;
+    },
+    renommer: (nom) => `Renommer « ${nom} »`,
+    nouveauNom: (nom) => `Nouveau nom de « ${nom} »`,
+    renommerAide: 'Entrée pour valider, Échap pour annuler.',
+    supprimer: (nom) => `Supprimer « ${nom} »`,
+    nouvelleCategorie: 'Nouvelle catégorie',
+    nouvelleCategorieIndication: 'Ex. Brunch',
+    creer: 'Créer',
+    categorieCreee: (nom) => `Catégorie « ${nom} » créée.`,
+    categorieExiste: (nom) => `La catégorie « ${nom} » existe déjà.`,
+    categorieRenommee: (ancien, nouveau) => `« ${ancien} » s’appelle maintenant « ${nouveau} ».`,
+    categoriesFusionnees: (ancien, nouveau) => `« ${ancien} » a rejoint « ${nouveau} ».`,
+    categorieSupprimee: (nom) => `Catégorie « ${nom} » supprimée.`,
+    // Confirmation de suppression d'une catégorie
+    supprimerCategorieTitre: (nom) => `Supprimer « ${nom} » ?`,
+    supprimerCategorieTexte: (nombre) => {
+      if (nombre === 0) return 'Aucune recette n’est rangée dans cette catégorie.';
+      if (nombre === 1) return 'Elle sera retirée de 1 recette, qui sera conservée.';
+      return `Elle sera retirée de ${nombre} recettes, qui seront conservées.`;
+    },
+    // Données
+    donnees: 'Données',
+    donneesAide: 'Vos recettes ne quittent jamais cet appareil. Exportez-les pour les sauvegarder ou les transférer.',
+    exporter: 'Exporter mes recettes',
+    exportees: (nombre) => (nombre > 1 ? `${nombre} recettes exportées.` : `${nombre} recette exportée.`),
+    importer: 'Importer un fichier',
+    importerAide: 'Fichier .json créé par « Exporter mes recettes ».',
+    fichierIllisible: 'Ce fichier n’est pas un fichier JSON lisible.',
+    // Résumé de l'import (<dialog>)
+    importTitre: 'Importer ce fichier ?',
+    importResume: (nombre, presentes) => {
+      const recettes = nombre > 1 ? `${nombre} recettes` : `${nombre} recette`;
+      if (presentes === 0) return `${recettes}.`;
+      return `${recettes}, dont ${presentes} ${presentes > 1 ? 'déjà présentes' : 'déjà présente'}.`;
+    },
+    importAucune: 'Ce fichier ne contient aucune recette valide.',
+    importInvalides: (nombre) => (nombre > 1
+      ? `${nombre} recettes invalides seront ignorées :`
+      : '1 recette invalide sera ignorée :'),
+    recetteSansTitre: (position) => `Recette n° ${position} (sans titre)`,
+    recetteInvalide: (position, titre) => `Recette n° ${position} « ${titre} »`,
+    fusionnerAide: 'Fusionner : ajoute les recettes du fichier ; pour celles déjà présentes, garde la version modifiée le plus récemment.',
+    remplacerAide: 'Remplacer : efface d’abord toutes vos recettes et catégories.',
+    fusionner: 'Fusionner',
+    remplacer: 'Remplacer',
+    annuler: 'Annuler',
+    fermer: 'Fermer',
+    importees: (nombre, ignorees) => {
+      const texte = nombre > 1 ? `${nombre} recettes importées.` : `${nombre} recette importée.`;
+      if (ignorees === 0) return texte;
+      return `${texte} ${ignorees > 1 ? `${ignorees} versions locales plus récentes ont été gardées.` : '1 version locale plus récente a été gardée.'}`;
+    },
+    // Tout effacer (double confirmation)
+    toutEffacer: 'Tout effacer',
+    effacerTitre: 'Tout effacer ?',
+    effacerTexte: (nombre) => {
+      const recettes = nombre > 1 ? `Vos ${nombre} recettes` : nombre === 1 ? 'Votre recette' : 'Toutes les données';
+      return `${recettes}, vos catégories et vos réglages seront définitivement effacés de cet appareil. Pensez à exporter vos recettes avant.`;
+    },
+    continuer: 'Continuer',
+    effacerConfirmationTitre: 'Dernière confirmation',
+    motConfirmation: 'EFFACER',
+    effacerConfirmationTexte: 'Cette action est irréversible. Pour confirmer, tapez EFFACER.',
+    effacerSaisie: 'Mot de confirmation',
+    effacerDefinitivement: 'Effacer définitivement',
+    toutEfface: 'Toutes les données ont été effacées.',
+    // À propos
+    aPropos: 'À propos',
+    version: 'Version',
+    espaceUtilise: 'Espace utilisé',
+    espaceDisponible: 'Espace disponible',
+    espaceInconnu: 'Inconnu sur ce navigateur',
+    persistance: 'Stockage persistant',
+    persistanceAccordee: 'Accordé : le navigateur n’effacera pas vos recettes de lui-même.',
+    persistanceRefusee: 'Non accordé : le navigateur peut effacer vos recettes s’il manque de place.',
   },
 
   // Messages de validation d'une recette (modele.js → validerRecette), affichés sous le champ concerné
@@ -290,6 +369,7 @@ export const T = {
     quantite: 'Les quantités doivent être des nombres positifs.',
     etapesObligatoires: 'Ajoutez au moins une étape.',
     minuteur: 'La durée d’un minuteur doit être un nombre entier de secondes.',
+    recetteIllisible: 'Cet élément n’est pas une recette.',
   },
 
   // Erreurs du stockage local (db.js), affichées telles quelles à l'utilisateur
@@ -304,6 +384,7 @@ export const T = {
     categorieVide: 'Donnez un nom à la catégorie.',
     categorieInconnue: 'Cette catégorie n’existe pas.',
     importInvalide: 'Ce fichier ne contient pas de recettes au format attendu.',
+    versionImport: 'Ce fichier vient d’une version plus récente de l’application. Mettez-la à jour, puis réessayez.',
     modeImport: 'Mode d’import inconnu : choisissez « fusionner » ou « remplacer ».',
   },
 

@@ -1109,3 +1109,81 @@ export function sensGlissement({ dx, duree, largeur }) {
   if (!longueur && !rapide) return 0;
   return dx < 0 ? 1 : -1;
 }
+
+// ---------------------------------------------------------------------------
+// Réglages (E5) : fichier d'export, analyse d'un fichier importé, espace de stockage
+// ---------------------------------------------------------------------------
+
+/** En-tête des fichiers d'export : { app, version, dateExport, recettes, categories }. */
+export const FORMAT_EXPORT = Object.freeze({ app: 'recette', version: 1 });
+
+/**
+ * Nom du fichier d'export, daté du jour local : « recettes-2026-11-06.json ».
+ * @param {Date} [date]
+ * @returns {string}
+ */
+export function nomFichierExport(date = new Date()) {
+  const deuxChiffres = (nombre) => String(nombre).padStart(2, '0');
+  return `recettes-${date.getFullYear()}-${deuxChiffres(date.getMonth() + 1)}-${deuxChiffres(date.getDate())}.json`;
+}
+
+/**
+ * Analyse le contenu d'un fichier importé, sans rien écrire : format, version, puis chaque
+ * recette complétée par creerRecette et vérifiée par validerRecette. Une simple liste de
+ * recettes est aussi acceptée.
+ * @param {unknown} donnees contenu JSON déjà décodé
+ * @returns {{ erreur: null|'format'|'version', recettes: Recette[],
+ *   invalides: { position: number, titre: string, erreurs: string[] }[], categories: string[] }}
+ *   erreur : « format » si ce n'est pas un export de l'app, « version » s'il vient d'une
+ *   version plus récente ; invalides : recettes ignorées (position à partir de 1) ;
+ *   categories : noms listés par le fichier, nettoyés et sans doublon
+ */
+export function analyserImport(donnees) {
+  const echec = (erreur) => ({ erreur, recettes: [], invalides: [], categories: [] });
+  let source;
+  if (Array.isArray(donnees)) {
+    source = { recettes: donnees };
+  } else {
+    if (!donnees || typeof donnees !== 'object' || donnees.app !== FORMAT_EXPORT.app) return echec('format');
+    if (!Number.isInteger(donnees.version) || donnees.version < 1) return echec('format');
+    if (donnees.version > FORMAT_EXPORT.version) return echec('version');
+    if (!Array.isArray(donnees.recettes)) return echec('format');
+    source = donnees;
+  }
+
+  const recettes = [];
+  const invalides = [];
+  source.recettes.forEach((brute, index) => {
+    const position = index + 1;
+    if (!brute || typeof brute !== 'object' || Array.isArray(brute)) {
+      invalides.push({ position, titre: '', erreurs: [T.validation.recetteIllisible] });
+      return;
+    }
+    const recette = creerRecette(brute);
+    const { valide, erreurs } = validerRecette(recette);
+    if (valide) recettes.push(recette);
+    else invalides.push({ position, titre: typeof brute.titre === 'string' ? brute.titre.trim() : '', erreurs: Object.values(erreurs) });
+  });
+
+  const categories = [...new Set((Array.isArray(source.categories) ? source.categories : [])
+    .map((c) => (typeof c === 'string' ? c : c?.nom))
+    .filter(estTexteRempli)
+    .map((nom) => nom.trim()))];
+
+  return { erreur: null, recettes, invalides, categories };
+}
+
+/**
+ * Formate une taille en mégaoctets (1 Mo = 1 048 576 octets) : « 0,4 Mo », « 12 Mo »,
+ * « 2 048 Mo ». Une décimale au plus sous 100 Mo, aucune au-delà.
+ * @param {number} octets
+ * @returns {string} chaîne vide si la valeur n'est pas un nombre positif
+ */
+export function formaterMo(octets) {
+  if (!estNombre(octets) || octets < 0) return '';
+  const mo = octets / (1024 * 1024);
+  const decimales = mo < 100 ? 1 : 0;
+  const texte = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: decimales }).format(mo);
+  // Séparateur de milliers : espace insécable, comme entre le nombre et l'unité
+  return `${texte.replace(/\s/g, ESPACE_INSECABLE)}${ESPACE_INSECABLE}Mo`;
+}

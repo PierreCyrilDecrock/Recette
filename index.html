@@ -9,6 +9,22 @@
   <meta name="theme-color" content="#faf6f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#171311" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
+  <script>
+    // Thème forcé dans les réglages (js/ecrans/reglages.js, même clé et mêmes couleurs) :
+    // appliqué avant le premier rendu pour éviter un flash de couleur.
+    try {
+      const theme = localStorage.getItem('recette.theme');
+      if (theme === 'clair' || theme === 'sombre') {
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="color-scheme"]').content = theme === 'clair' ? 'light' : 'dark';
+        document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+          meta.content = theme === 'clair' ? '#faf6f2' : '#171311';
+        });
+      }
+    } catch (erreur) {
+      // Stockage local inaccessible : le thème suit le système
+    }
+  </script>
   <link rel="icon" href="icones/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/composants.css">

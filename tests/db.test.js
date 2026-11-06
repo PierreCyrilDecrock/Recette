@@ -268,22 +268,30 @@ describe('réglages et persistance', () => {
 
 // ---------------------------------------------------------------------------
 describe('export, effacement, import', () => {
-  /** Prépare un jeu de données varié : exemples, favori, catégorie vide, réglages. */
+  /** Prépare un jeu de données varié : exemples, favori, catégorie vide, réglage de tri. */
   async function preparer() {
     await chargerExemples();
     await basculerFavori('exemple-creme-brulee');
     await enregistrerCategorie('Apéritif');
-    await ecrireReglage('theme', 'sombre');
     await ecrireReglage('tri', 'titre');
   }
 
-  /** Photographie complète de la base. */
+  /** Photographie des données exportables. */
   const etat = async () => ({
     recettes: await listerRecettes(),
     favoris: (await listerRecettes({ favoris: true })).map((r) => r.id),
     categories: await listerCategories(),
-    theme: await lireReglage('theme'),
-    tri: await lireReglage('tri'),
+  });
+
+  test('format du fichier : { app, version, dateExport, recettes, categories }', async () => {
+    await preparer();
+    const fichier = await toutExporter();
+    assert.deepEqual(Object.keys(fichier), ['app', 'version', 'dateExport', 'recettes', 'categories']);
+    assert.equal(fichier.app, 'recette');
+    assert.equal(fichier.version, 1);
+    assert.ok(!Number.isNaN(Date.parse(fichier.dateExport)));
+    assert.equal(fichier.recettes.length, EXEMPLES.length);
+    assert.deepEqual(fichier.categories, ['Apéritif', 'Dessert', 'Entrée', 'Plat', 'Rapide', 'Végétarien']);
   });
 
   test('aller-retour export → effacement → import : données identiques', async () => {
@@ -291,13 +299,9 @@ describe('export, effacement, import', () => {
     const avant = await etat();
     // Passage par du texte JSON, comme un vrai fichier
     const fichier = JSON.parse(JSON.stringify(await toutExporter()));
-    assert.equal(fichier.application, 'recette');
-    assert.equal(fichier.version, 1);
-    assert.equal(fichier.recettes.length, EXEMPLES.length);
-    assert.equal('persistance' in fichier.reglages, false);
 
     await toutEffacer();
-    assert.deepEqual(await etat(), { recettes: [], favoris: [], categories: [], theme: undefined, tri: undefined });
+    assert.deepEqual(await etat(), { recettes: [], favoris: [], categories: [] });
 
     const bilan = await toutImporter(fichier, { mode: 'remplacer' });
     assert.deepEqual(bilan, { importees: EXEMPLES.length, ignorees: 0, invalides: 0 });
@@ -309,38 +313,39 @@ describe('export, effacement, import', () => {
     );
   });
 
-  test('remplacer efface d’abord les recettes et catégories existantes', async () => {
+  test('remplacer efface d’abord les recettes et catégories existantes, pas les réglages', async () => {
     await preparer();
     const fichier = await toutExporter();
     await toutEffacer();
     await enregistrerRecette(recette({ titre: 'Locale', categories: ['Locale'] }));
+    await ecrireReglage('tri', 'temps');
     await toutImporter(fichier, { mode: 'remplacer' });
     const recettes = await listerRecettes();
     assert.equal(recettes.length, EXEMPLES.length);
     assert.ok(!recettes.some((r) => r.titre === 'Locale'));
     assert.ok(!(await listerCategories()).includes('Locale'));
+    assert.equal(await lireReglage('tri'), 'temps');
   });
 
   test('fusionner garde la version la plus récente de chaque recette', async () => {
     const ancienne = await enregistrerRecette(recette({ id: 'r1', titre: 'Version locale' }));
     const autre = await enregistrerRecette(recette({ id: 'r2', titre: 'Locale récente' }));
-    await ecrireReglage('theme', 'clair');
     const fichier = {
+      app: 'recette',
+      version: 1,
       recettes: [
         { ...ancienne, titre: 'Version importée', dateModification: '2099-01-01T00:00:00.000Z' },
         { ...autre, titre: 'Importée ancienne', dateModification: '2000-01-01T00:00:00.000Z' },
         recette({ id: 'r3', titre: 'Nouvelle', categories: ['Importée'] }),
       ],
-      reglages: { theme: 'sombre', tri: 'temps' },
+      categories: ['Vide'],
     };
     const bilan = await toutImporter(fichier); // mode « fusionner » par défaut
     assert.deepEqual(bilan, { importees: 2, ignorees: 1, invalides: 0 });
     assert.equal((await lireRecette('r1')).titre, 'Version importée');
     assert.equal((await lireRecette('r2')).titre, 'Locale récente');
     assert.equal((await lireRecette('r3')).titre, 'Nouvelle');
-    assert.deepEqual(await listerCategories(), ['Importée']);
-    assert.equal(await lireReglage('theme'), 'clair', 'un réglage local n’est pas écrasé');
-    assert.equal(await lireReglage('tri'), 'temps');
+    assert.deepEqual(await listerCategories(), ['Importée', 'Vide']);
   });
 
   test('recettes invalides ignorées, liste simple acceptée, valeurs par défaut complétées', async () => {
@@ -356,11 +361,13 @@ describe('export, effacement, import', () => {
     assert.equal(validerRecette(r).valide, true);
   });
 
-  test('fichier ou mode invalides : erreur, rien n’est modifié', async () => {
+  test('fichier, version ou mode invalides : erreur, rien n’est modifié', async () => {
     await enregistrerRecette(recette({ id: 'garde' }));
     await echoueAvec(toutImporter({ bonjour: 1 }), 'importInvalide');
     await echoueAvec(toutImporter(null), 'importInvalide');
-    await echoueAvec(toutImporter({ recettes: [] }, { mode: 'ecraser' }), 'modeImport');
+    await echoueAvec(toutImporter({ application: 'recette', version: 1, recettes: [] }), 'importInvalide');
+    await echoueAvec(toutImporter({ app: 'recette', version: 2, recettes: [] }), 'versionImport');
+    await echoueAvec(toutImporter({ app: 'recette', version: 1, recettes: [] }, { mode: 'ecraser' }), 'modeImport');
     assert.equal((await listerRecettes()).length, 1);
   });
 
@@ -380,7 +387,7 @@ describe('export, effacement, import', () => {
     await toutEffacer();
     assert.deepEqual(await listerRecettes(), []);
     assert.deepEqual(await listerCategories(), []);
-    assert.equal(await lireReglage('theme'), undefined);
+    assert.equal(await lireReglage('tri'), undefined);
   });
 });
 
@@ -428,16 +435,16 @@ describe('brouillons du formulaire', () => {
     assert.equal(cleBrouillon(), 'brouillon:nouvelle');
   });
 
-  test('les brouillons ne sont ni exportés ni importés', async () => {
+  test('ni les brouillons ni les autres réglages ne sont exportés ou importés', async () => {
     await toutEffacer();
     await ecrireReglage(cleBrouillon(), { etat: { titre: 'En cours' } });
     await ecrireReglage('tri', 'titre');
     const fichier = await toutExporter();
-    assert.deepEqual(Object.keys(fichier.reglages), ['tri']);
+    assert.equal('reglages' in fichier, false);
 
-    await toutImporter({ recettes: [], reglages: { 'brouillon:x': { etat: {} }, theme: 'sombre' } });
+    await toutImporter({ ...fichier, reglages: { 'brouillon:x': { etat: {} }, tri: 'temps' } });
     assert.equal(await lireReglage('brouillon:x'), undefined);
-    assert.equal(await lireReglage('theme'), 'sombre');
+    assert.equal(await lireReglage('tri'), 'titre');
     assert.deepEqual(await lireReglage(cleBrouillon()), { etat: { titre: 'En cours' } });
   });
 });
