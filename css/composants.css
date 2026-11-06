@@ -1024,3 +1024,51 @@ body[data-immersif] .toasts {
     transform: translateY(12px);
   }
 }
+
+/* --------------------------------------------------------------------------
+   Bandeau « Nouvelle version disponible — Recharger » (js/app.js)
+   Dans la zone du pouce, empilé au-dessus du bouton « + » (60 px) ; les toasts passent
+   au-dessus du bandeau. Sur une ligne : le texte se replie à côté du bouton.
+   -------------------------------------------------------------------------- */
+.bandeau-maj {
+  --bas-bandeau: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace) + 60px + 12px);
+  position: fixed;
+  inset-inline: calc(var(--espace) + var(--sa-gauche)) calc(var(--espace) + var(--sa-droite));
+  bottom: var(--bas-bandeau);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  box-shadow: 0 8px 24px var(--ombre);
+  animation: apparition-toast var(--duree) var(--courbe);
+}
+
+body[data-immersif] .bandeau-maj {
+  --bas-bandeau: calc(var(--sa-bas) + var(--espace));
+}
+
+.bandeau-maj__texte {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bandeau-maj .bouton {
+  flex: none;
+}
+
+/* Le bandeau mesure au plus 68 px (texte sur deux lignes) : les toasts s'affichent au-dessus */
+body[data-mise-a-jour] .toasts {
+  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace) + 60px + 12px + 80px);
+}
+
+body[data-mise-a-jour][data-immersif] .toasts {
+  bottom: calc(var(--sa-bas) + var(--espace) + 80px);
+}

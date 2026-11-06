@@ -10,7 +10,11 @@
 
 import { T } from './textes.js';
 
-/** Version de l'application (affichée dans les réglages). Seule source de vérité. */
+/**
+ * Version de l'application (affichée dans les réglages), référence unique à modifier à
+ * chaque publication. sw.js en porte une copie (le navigateur ne détecte une mise à jour que
+ * si sw.js change) : npm run verifier-cache échoue si elles diffèrent.
+ */
 export const VERSION = '0.1.0';
 
 /**
@@ -287,6 +291,79 @@ function appliquerTextes() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Service worker : hors ligne et mises à jour
+// ---------------------------------------------------------------------------
+
+/** Message qui demande à la nouvelle version de ne plus attendre (voir sw.js). */
+const MESSAGE_ACTIVER = 'SKIP_WAITING';
+
+/** Vrai une fois « Recharger » choisi : seul ce cas recharge la page au changement de version. */
+let rechargementDemande = false;
+
+/** Vrai en HTTPS ou sur la machine locale : les seuls contextes où le service worker est permis. */
+function contexteSecurise() {
+  return location.protocol === 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+}
+
+/**
+ * Bandeau « Nouvelle version disponible — Recharger » : le bouton active la version en
+ * attente, puis la page se recharge quand elle prend la main (controllerchange).
+ * @param {ServiceWorker} enAttente
+ */
+function proposerMiseAJour(enAttente) {
+  if (document.querySelector('.bandeau-maj')) return;
+  const bandeau = document.createElement('div');
+  bandeau.className = 'bandeau-maj';
+  bandeau.setAttribute('role', 'status');
+  const texte = document.createElement('p');
+  texte.className = 'bandeau-maj__texte';
+  texte.textContent = T.app.nouvelleVersion;
+  const bouton = document.createElement('button');
+  bouton.type = 'button';
+  bouton.className = 'bouton bouton--principal';
+  bouton.textContent = T.app.recharger;
+  bouton.addEventListener('click', () => {
+    bouton.disabled = true;
+    rechargementDemande = true;
+    enAttente.postMessage({ type: MESSAGE_ACTIVER });
+  });
+  bandeau.append(texte, bouton);
+  document.body.append(bandeau);
+  document.body.toggleAttribute('data-mise-a-jour', true);
+}
+
+/** Enregistre sw.js (chemin relatif : l'app peut vivre dans un sous-dossier). */
+async function enregistrerServiceWorker() {
+  if (!('serviceWorker' in navigator) || !contexteSecurise()) return;
+  // À la première installation, le service worker prend la main sans qu'il faille recharger
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (rechargementDemande) location.reload();
+  });
+  let enregistrement;
+  try {
+    enregistrement = await navigator.serviceWorker.register('sw.js');
+  } catch (erreur) {
+    console.warn(erreur);
+    return;
+  }
+  // Enregistrement refusé sans erreur (service worker bloqué par le navigateur ou un outil)
+  if (!enregistrement) return;
+  // Une version attendait déjà (onglet rouvert) : on la propose
+  if (enregistrement.waiting && navigator.serviceWorker.controller) proposerMiseAJour(enregistrement.waiting);
+  enregistrement.addEventListener('updatefound', () => {
+    const nouveau = enregistrement.installing;
+    nouveau?.addEventListener('statechange', () => {
+      // Installée alors qu'une version contrôle déjà la page : c'est une mise à jour
+      if (nouveau.state === 'installed' && navigator.serviceWorker.controller) proposerMiseAJour(nouveau);
+    });
+  });
+}
+
 appliquerTextes();
 window.addEventListener('hashchange', naviguer);
 naviguer();
+
+// Après le premier affichage : l'installation télécharge tous les fichiers de l'app
+if (document.readyState === 'complete') enregistrerServiceWorker();
+else window.addEventListener('load', enregistrerServiceWorker, { once: true });

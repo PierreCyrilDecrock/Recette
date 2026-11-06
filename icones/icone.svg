@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icône source de l'application : une toque blanche sur fond orange tomate.
+       scripts/icones.mjs en dérive les PNG (192, 512, maskable, Apple) et les favicons :
+       il arrondit #fond et agrandit #toque selon la variante.
+       Telle quelle, la toque tient dans la zone sûre des icônes maskable (cercle de 80 %). -->
+  <rect id="fond" width="512" height="512" fill="#c43d1d"/>
+  <g id="toque">
+    <g transform="translate(0 10)">
+      <!-- Bouffant : trois arrondis et le corps -->
+      <g fill="#fff">
+        <circle cx="178" cy="232" r="72"/>
+        <circle cx="256" cy="192" r="88"/>
+        <circle cx="334" cy="232" r="72"/>
+        <rect x="186" y="232" width="140" height="108"/>
+        <!-- Bandeau -->
+        <rect x="186" y="340" width="140" height="44" rx="14"/>
+      </g>
+      <!-- Séparation du bandeau et plis (retirés des favicons), couleur du fond -->
+      <g fill="none" stroke="#c43d1d" stroke-width="10" stroke-linecap="round">
+        <path d="M186 342h140"/>
+        <path id="plis" d="M226 280v42M286 280v42"/>
+      </g>
+    </g>
+  </g>
+</svg>

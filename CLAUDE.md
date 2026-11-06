@@ -32,7 +32,8 @@ js/
   ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
   composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js,
                 liste-ingredients.js
-icones/       icônes de l'app (PWA)
+icones/       icônes de l'app (PWA) : source icone.svg, PNG et favicons générés
+scripts/      outils de dev : icones.mjs (génère les icônes), verifier-cache.mjs
 tests/        tests unitaires (*.test.js) ; tests/e2e/ tests Playwright (*.spec.js)
 docs/         cahier des charges et plan de développement
 ```
@@ -78,7 +79,20 @@ docs/         cahier des charges et plan de développement
   catégories en noms). Un fichier importé passe par `analyserImport` (format, version, chaque
   recette par `validerRecette` → `recettes` valides et `invalides` listées) ; `toutImporter` en
   mode `fusionner` (version la plus récente gardée) ou `remplacer`.
-- Version de l'app : constante unique `VERSION` exportée par `js/app.js`.
+- Version de l'app : `VERSION` exportée par `js/app.js`, à changer à chaque publication. `sw.js`
+  en porte une copie (le navigateur ne voit une mise à jour que si `sw.js` change) :
+  `npm run verifier-cache` échoue si elles diffèrent.
+- Service worker (`sw.js`, enregistré par `app.js` en HTTPS ou sur localhost) : `FICHIERS` liste
+  tout ce qui est mis en cache à l'installation (chaque nouveau fichier de `css/`, `js/` ou
+  `icones/` doit y être ajouté, `npm run verifier-cache` le contrôle) ; cache d'abord, cache
+  `recette-<VERSION>`, anciens caches supprimés à l'activation. Pas de `skipWaiting` automatique :
+  `app.js` affiche le bandeau « Nouvelle version disponible — Recharger », qui envoie
+  `{ type: 'SKIP_WAITING' }` puis recharge à `controllerchange`. En local, le cache sert les
+  anciens fichiers : cocher « Update on reload » dans les DevTools, ou changer `VERSION`.
+  Les tests Playwright bloquent le service worker (`serviceWorkers: 'block'`), sauf
+  `tests/e2e/hors-ligne.spec.js`.
+- Icônes : seule `icones/icone.svg` se modifie à la main ; `npm run icones` régénère les PNG
+  (192, 512, maskable 512, Apple 180), `favicon.svg` et `favicon.ico`.
 - Sélecteur de portions : `creerSelecteurPortions({ valeur })` renvoie l'élément (propriété `valeur`),
   qui émet `EVENEMENT_PORTIONS` (`detail.portions`). Les portions choisies sur la fiche ne sont
   jamais enregistrées : elles passent au mode cuisine par l'URL.
@@ -144,6 +158,8 @@ docs/         cahier des charges et plan de développement
 | Servir l'app | `npm run serve` (ou `python3 -m http.server 8000`) |
 | Tests unitaires | `npm test` (`node --test`, Node ≥ 22) |
 | Tests de bout en bout | `npm run e2e` (Playwright, dossier `tests/e2e/`) |
+| Vérifier la liste du cache | `npm run verifier-cache` |
+| Régénérer les icônes | `npm run icones` |
 
 ## Définition de « terminé » pour une étape
 

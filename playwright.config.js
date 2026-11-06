@@ -7,6 +7,9 @@ export default defineConfig({
   testMatch: '**/*.spec.js',
   use: {
     baseURL: 'http://localhost:8000',
+    // Service worker bloqué par défaut : son cache servirait les fichiers à la place du
+    // serveur (et de page.route). Seul tests/e2e/hors-ligne.spec.js l'autorise.
+    serviceWorkers: 'block',
   },
   // Sert l'application avant les tests (réutilise un serveur déjà lancé en local).
   webServer: {

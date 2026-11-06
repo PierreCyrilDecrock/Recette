@@ -16,6 +16,9 @@ export const T = {
     titreDocument: (titreEcran) => `${titreEcran} — Recette`,
     erreurChargement: "Cet écran n'a pas pu s'afficher. Vérifiez votre connexion puis réessayez.",
     reessayer: 'Réessayer',
+    // Bandeau de mise à jour (service worker)
+    nouvelleVersion: 'Nouvelle version disponible',
+    recharger: 'Recharger',
   },
 
   // E1 — Liste des recettes
