@@ -47,6 +47,9 @@ async function ouvrirCuisine(page, requete = '?portions=3') {
  *   depart : point de départ (centre de la carte par défaut)
  */
 async function balayer(page, { dx = 0, dy = 0, pas = 8, attente = 0, lacher = true, depart } = {}) {
+  // Pendant une transition de vue (changement d'écran), le navigateur adresse les
+  // événements à <html> : le geste commence une fois l'écran installé
+  await page.waitForFunction(() => !document.activeViewTransition);
   const boite = await carte(page).boundingBox();
   const x0 = depart?.x ?? boite.x + boite.width / 2;
   const y0 = depart?.y ?? boite.y + 150;

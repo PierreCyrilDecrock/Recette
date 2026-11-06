@@ -1,11 +1,17 @@
 // E1 — Liste des recettes (accueil) ; sert aussi l'onglet Favoris (params.favoris).
 // Recherche instantanée (modele.js → rechercher), filtre par catégorie (puces à sélection
 // unique), tri mémorisé dans les réglages, grille de cartes et états vides.
+// Sur grand écran, la liste reste affichée à gauche de la fiche (mode double, js/app.js) :
+// la fonction de nettoyage porte alors selectionner(id), qui marque la recette ouverte,
+// et la liste se recharge d'elle-même après chaque écriture en base (favori, suppression…).
 
 import { T } from '../textes.js';
-import { ecrireReglage, lireReglage, listerCategories, listerRecettes } from '../db.js';
+import {
+  EVENEMENT_CHANGEMENT, changements, ecrireReglage, lireReglage, listerCategories, listerRecettes,
+} from '../db.js';
 import { CRITERES_TRI, rechercher, trier } from '../modele.js';
 import { creerCarteRecette } from '../composants/carte-recette.js';
+import { icone } from '../icones.js';
 
 /** Clé du réglage qui mémorise le critère de tri. */
 const REGLAGE_TRI = 'tri';
@@ -23,7 +29,6 @@ const filtres = {
 };
 
 // Illustrations statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici
-const SVG_LOUPE = '<svg class="recherche__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>';
 // Une marmite qui fume doucement, posée sur un carnet ouvert
 const SVG_CARNET_VIDE = `<svg class="etat-vide__illustration" viewBox="0 0 160 120" aria-hidden="true" focusable="false">
   <path class="etat-vide__fond" d="M18 96c0-6 5-10 11-10h102c6 0 11 4 11 10v4c0 3-2 5-5 5H23c-3 0-5-2-5-5v-4Z"/>
@@ -81,8 +86,13 @@ export async function afficher(conteneur, params) {
   const etat = filtres[favoris ? 'favoris' : 'recettes'];
 
   const section = element('section', 'ecran liste');
-  const titre = element('h1', 'titre-ecran', favoris ? T.favoris.titre : T.liste.titre);
-  titre.tabIndex = -1; // reçoit le focus après le chargement des exemples
+  /** Titre de l'écran : h1, ou h2 quand une fiche ouverte à côté porte le h1 de la page. */
+  const creerTitre = (balise) => {
+    const el = element(balise, 'titre-ecran', favoris ? T.favoris.titre : T.liste.titre);
+    el.tabIndex = -1; // reçoit le focus après le chargement des exemples
+    return el;
+  };
+  let titre = creerTitre('h1');
   section.append(titre);
 
   let recettes;
@@ -104,6 +114,8 @@ export async function afficher(conteneur, params) {
 
   let actif = true;
   let minuterieAnnonce = null;
+  // Recette ouverte à côté de la liste (mode double), marquée aria-current
+  let selection = null;
 
   // --- Outils : recherche, puces de catégories, tri -----------------------------------
   const outils = element('div', 'liste__outils');
@@ -123,9 +135,7 @@ export async function afficher(conteneur, params) {
     enterKeyHint: 'search',
     value: etat.requete,
   });
-  formulaire.append(libelle);
-  formulaire.insertAdjacentHTML('beforeend', SVG_LOUPE);
-  formulaire.append(saisie);
+  formulaire.append(libelle, icone('recherche', { taille: 20, classe: 'recherche__icone' }), saisie);
 
   const puces = element('div', 'puces liste__puces');
   puces.setAttribute('role', 'group');
@@ -215,9 +225,39 @@ export async function afficher(conteneur, params) {
     const resultats = trier(rechercher(parCategorie, etat.requete), tri);
 
     grille.replaceChildren(...resultats.map(creerCarteRecette));
+    marquerSelection();
     annoncer(T.liste.resultats(resultats.length), differe);
     zoneEtat.replaceChildren(...(resultats.length === 0 ? [etatAucunResultat()] : []));
   }
+
+  /** Marque la carte de la recette ouverte (aria-current) et la rend visible. */
+  function marquerSelection({ montrer = false } = {}) {
+    const href = selection === null ? null : `#/recette/${encodeURIComponent(selection)}`;
+    for (const lien of grille.querySelectorAll('.carte-recette')) {
+      const choisie = lien.getAttribute('href') === href;
+      if (choisie) lien.setAttribute('aria-current', 'page');
+      else lien.removeAttribute('aria-current');
+      if (choisie && montrer) lien.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  /** Recharge recettes et catégories après une écriture en base (mode double). */
+  let rechargement = null;
+  function recharger() {
+    if (rechargement) return;
+    rechargement = Promise.all([listerRecettes({ favoris }), listerCategories()])
+      .then(([nouvelles, nouvellesCategories]) => {
+        if (!actif) return;
+        recettes = nouvelles;
+        categories = nouvellesCategories;
+        rendrePuces();
+        rendre();
+      })
+      .catch((erreur) => console.warn(erreur))
+      .finally(() => { rechargement = null; });
+  }
+  const surChangement = () => queueMicrotask(recharger);
+  changements.addEventListener(EVENEMENT_CHANGEMENT, surChangement);
 
   // --- États vides ----------------------------------------------------------------------
 
@@ -314,8 +354,25 @@ export async function afficher(conteneur, params) {
   rendrePuces();
   rendre();
 
-  return () => {
+  const nettoyage = () => {
     actif = false;
     clearTimeout(minuterieAnnonce);
+    changements.removeEventListener(EVENEMENT_CHANGEMENT, surChangement);
   };
+  /**
+   * Mode double : marque la recette ouverte à droite (null : aucune). Le titre de la liste
+   * passe alors au niveau 2, sous le h1 de la fiche.
+   * @param {string|null} id
+   */
+  nettoyage.selectionner = (id) => {
+    selection = id ?? null;
+    const balise = selection === null ? 'H1' : 'H2';
+    if (titre.tagName !== balise) {
+      const nouveau = creerTitre(balise.toLowerCase());
+      titre.replaceWith(nouveau);
+      titre = nouveau;
+    }
+    marquerSelection({ montrer: true });
+  };
+  return nettoyage;
 }

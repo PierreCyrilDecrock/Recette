@@ -11,15 +11,10 @@ import {
 } from '../db.js';
 import { analyserImport, formaterMo, nomFichierExport } from '../modele.js';
 import { afficherToast } from '../composants/toast.js';
+import { icone } from '../icones.js';
 
 const R = T.reglages;
 
-// Icônes statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici.
-// Provisoires : elles passeront par js/icones.js à l'étape 11.
-const SVG_RENOMMER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>';
-const SVG_SUPPRIMER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
-const SVG_EXPORTER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 17v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1"/></svg>';
-const SVG_IMPORTER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 17v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1"/></svg>';
 
 // ---------------------------------------------------------------------------
 // Thème
@@ -29,7 +24,7 @@ const SVG_IMPORTER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="fal
 const CLE_THEME = 'recette.theme';
 const THEMES = ['clair', 'sombre', 'systeme'];
 // Couleur de la barre du navigateur : --fond de chaque thème (comme dans index.html)
-const COULEURS_BARRE = { clair: '#faf6f2', sombre: '#171311' };
+const COULEURS_BARRE = { clair: '#f6f0ea', sombre: '#171311' };
 
 /** Thème mémorisé : « clair », « sombre » ou « systeme » (valeur par défaut). */
 function lireTheme() {
@@ -76,20 +71,19 @@ function element(balise, classe, texte) {
   return el;
 }
 
-/** Bouton avec une icône statique suivie d'un libellé. */
-function boutonAvecIcone(classe, icone, libelle) {
+/** Bouton avec une icône suivie d'un libellé. */
+function boutonAvecIcone(classe, nomIcone, libelle) {
   const bouton = element('button', classe);
   bouton.type = 'button';
-  bouton.innerHTML = icone;
-  bouton.append(element('span', undefined, libelle));
+  bouton.append(icone(nomIcone, { taille: 20 }), element('span', undefined, libelle));
   return bouton;
 }
 
 /** Bouton rond à icône seule (libellé via aria-label). */
-function boutonIcone(icone, libelle) {
+function boutonIcone(nomIcone, libelle) {
   const bouton = element('button', 'bouton bouton--icone');
   bouton.type = 'button';
-  bouton.innerHTML = icone;
+  bouton.append(icone(nomIcone));
   bouton.setAttribute('aria-label', libelle);
   return bouton;
 }
@@ -249,11 +243,11 @@ export async function afficher(conteneur) {
   // --- Données : export, import, effacement ------------------------------------------------
   const donnees = creerBloc('donnees', R.donnees);
   const actionsDonnees = element('div', 'reglages__actions');
-  const boutonExporter = boutonAvecIcone('bouton bouton--principal', SVG_EXPORTER, R.exporter);
+  const boutonExporter = boutonAvecIcone('bouton bouton--principal', 'telecharger', R.exporter);
 
   // Le champ fichier, visuellement caché, est habillé par son libellé en forme de bouton
   const libelleImport = element('label', 'bouton reglages__import');
-  libelleImport.innerHTML = SVG_IMPORTER;
+  libelleImport.append(icone('importer', { taille: 20 }));
   const saisieImport = element('input', 'visuellement-cache');
   saisieImport.type = 'file';
   saisieImport.accept = '.json,application/json';
@@ -333,9 +327,9 @@ export async function afficher(conteneur) {
     const textes = element('div', 'reglages__categorie-textes');
     const libelle = element('span', 'reglages__categorie-nom', nom);
     textes.append(libelle, element('span', 'reglages__categorie-nombre', R.nombreRecettes(nombre)));
-    const renommer = boutonIcone(SVG_RENOMMER, R.renommer(nom));
+    const renommer = boutonIcone('crayon', R.renommer(nom));
     renommer.dataset.action = 'renommer';
-    const supprimer = boutonIcone(SVG_SUPPRIMER, R.supprimer(nom));
+    const supprimer = boutonIcone('poubelle', R.supprimer(nom));
     supprimer.dataset.action = 'supprimer';
     ligne.append(textes, renommer, supprimer);
 

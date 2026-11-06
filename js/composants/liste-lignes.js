@@ -6,16 +6,10 @@
 // déplacement) émet EVENEMENT_LIGNES.
 
 import { T } from '../textes.js';
+import { icone } from '../icones.js';
 
 /** Nom de l'événement émis (et propagé) quand des lignes sont ajoutées, retirées ou déplacées. */
 export const EVENEMENT_LIGNES = 'changement-lignes';
-
-// Icônes statiques : innerHTML est sans risque ici
-const SVG_POIGNEE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
-const SVG_MENU = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>';
-const SVG_MONTER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
-const SVG_DESCENDRE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
-const SVG_SUPPRIMER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
 
 // Défilement automatique pendant un glissement près du haut ou du bas de l'écran
 const MARGE_DEFILEMENT = 72;
@@ -39,6 +33,7 @@ function element(balise, classe, texte) {
  * @property {() => HTMLElement} dernier champ qui reçoit le focus en remontant (retour arrière)
  * @property {(numero: number) => void} numeroter met à jour numéro et libellés
  * @property {{ libelle: () => string, icone: () => string, executer: () => void }[]} [actions]
+ *   actions propres au menu de la ligne ; icone() renvoie un nom de js/icones.js
  *   actions propres à la ligne, ajoutées au menu
  */
 
@@ -97,13 +92,13 @@ export function creerListeLignes({ creerContenu, libelles }) {
     const contenu = creerContenu(donnees);
     const item = element('li', 'ligne');
     const poignee = element('span', 'ligne__poignee');
-    poignee.innerHTML = SVG_POIGNEE;
+    poignee.append(icone('poignee', { taille: 22 }));
     poignee.setAttribute('aria-hidden', 'true'); // alternative au clavier : le menu de ligne
 
     const menu = element('div', 'menu ligne__menu');
     const declencheur = element('button', 'bouton bouton--icone menu__declencheur');
     declencheur.type = 'button';
-    declencheur.innerHTML = SVG_MENU;
+    declencheur.append(icone('points-verticaux'));
     declencheur.setAttribute('aria-expanded', 'false');
     const id = `${prefixe}-menu-${++numeroLigne}`;
     declencheur.setAttribute('aria-controls', id);
@@ -205,13 +200,13 @@ export function creerListeLignes({ creerContenu, libelles }) {
     const listeMenu = item.querySelector('.menu__liste');
     const contenu = contenus.get(item);
     const actions = [];
-    if (item.previousElementSibling) actions.push({ libelle: L.monter, icone: SVG_MONTER, executer: () => deplacer(item, -1) });
-    if (item.nextElementSibling) actions.push({ libelle: L.descendre, icone: SVG_DESCENDRE, executer: () => deplacer(item, 1) });
+    if (item.previousElementSibling) actions.push({ libelle: L.monter, icone: 'fleche-haut', executer: () => deplacer(item, -1) });
+    if (item.nextElementSibling) actions.push({ libelle: L.descendre, icone: 'fleche-bas', executer: () => deplacer(item, 1) });
     for (const action of contenu.actions ?? []) {
       actions.push({ libelle: action.libelle(), icone: action.icone(), executer: action.executer, garderFocus: true });
     }
     actions.push({
-      libelle: L.supprimer, icone: SVG_SUPPRIMER, danger: true, garderFocus: true,
+      libelle: L.supprimer, icone: 'poubelle', danger: true, garderFocus: true,
       executer: () => supprimer(item),
     });
 
@@ -219,8 +214,7 @@ export function creerListeLignes({ creerContenu, libelles }) {
       const li = element('li');
       const bouton = element('button', `menu__action${action.danger ? ' menu__action--danger' : ''}`);
       bouton.type = 'button';
-      bouton.innerHTML = action.icone;
-      bouton.append(element('span', undefined, action.libelle));
+      bouton.append(icone(action.icone, { taille: 20 }), element('span', undefined, action.libelle));
       bouton.addEventListener('click', () => {
         fermerMenu({ rendreFocus: !action.garderFocus });
         action.executer();

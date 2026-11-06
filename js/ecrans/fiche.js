@@ -13,17 +13,7 @@ import { creerDifficulte, creerVisuel } from '../composants/carte-recette.js';
 import { creerListeIngredients } from '../composants/liste-ingredients.js';
 import { EVENEMENT_PORTIONS, creerSelecteurPortions } from '../composants/selecteur-portions.js';
 import { afficherToast } from '../composants/toast.js';
-
-// Icônes statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici.
-// Provisoires : elles passeront par js/icones.js à l'étape 11.
-const SVG_RETOUR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>';
-const SVG_COEUR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
-const SVG_PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>';
-const SVG_CUISINER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 13.5a6 6 0 0 1 12 0V18a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-4.5Z"/><path d="M8.5 7.5a3.5 3.5 0 0 1 7 0"/></svg>';
-const SVG_MODIFIER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>';
-const SVG_DUPLIQUER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
-const SVG_PARTAGER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 8.5 12 4l4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>';
-const SVG_SUPPRIMER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+import { icone } from '../icones.js';
 
 /** Temps affichés dans le bloc infos, dans l'ordre. */
 const TEMPS = [
@@ -40,10 +30,9 @@ function element(balise, classe, texte) {
   return el;
 }
 
-/** Bouton (ou lien) avec une icône statique suivie d'un libellé. */
-function avecIcone(el, icone, libelle) {
-  el.innerHTML = icone;
-  el.append(element('span', undefined, libelle));
+/** Bouton (ou lien) avec une icône suivie d'un libellé. */
+function avecIcone(el, nomIcone, libelle, taille = 20) {
+  el.append(icone(nomIcone, { taille }), element('span', undefined, libelle));
   return el;
 }
 
@@ -79,13 +68,13 @@ export async function afficher(conteneur, params) {
   const retour = element('a', 'bouton bouton--icone fiche__flottant fiche__retour');
   retour.href = '#/';
   retour.setAttribute('aria-label', T.fiche.retour);
-  retour.innerHTML = SVG_RETOUR;
+  retour.append(icone('chevron-gauche'));
 
   const favori = element('button', 'bouton bouton--icone fiche__flottant fiche__favori');
   favori.type = 'button';
   favori.setAttribute('aria-label', T.fiche.favori);
   favori.setAttribute('aria-pressed', String(recette.favori === true));
-  favori.innerHTML = SVG_COEUR;
+  favori.append(icone('coeur'), icone('coeur-plein'));
   media.append(creerVisuel(recette), retour, favori);
 
   const titres = element('div', 'fiche__titres');
@@ -111,12 +100,9 @@ export async function afficher(conteneur, params) {
     infos.append(carte);
   };
   if (DIFFICULTES.includes(recette.difficulte)) {
-    const points = creerDifficulte(recette.difficulte);
-    // Le mot suit les points : ils deviennent purement décoratifs
-    points.removeAttribute('role');
-    points.removeAttribute('aria-label');
-    points.setAttribute('aria-hidden', 'true');
-    ajouterInfo(T.fiche.difficulte, points, element('span', undefined, T.fiche.difficultes[recette.difficulte]));
+    // Le mot suit les toques : elles sont purement décoratives
+    const toques = creerDifficulte(recette.difficulte, { decoratif: true, taille: 18 });
+    ajouterInfo(T.fiche.difficulte, toques, element('span', undefined, T.fiche.difficultes[recette.difficulte]));
   }
   for (const [champ, cle] of TEMPS) {
     if (recette[champ] > 0) ajouterInfo(T.fiche[cle], formaterDuree(recette[champ]));
@@ -179,7 +165,7 @@ export async function afficher(conteneur, params) {
   const actions = element('div', 'fiche__actions');
   actions.setAttribute('role', 'group');
   actions.setAttribute('aria-label', T.fiche.actions);
-  const cuisiner = avecIcone(element('a', 'bouton bouton--principal fiche__cuisiner'), SVG_CUISINER, T.fiche.cuisiner);
+  const cuisiner = avecIcone(element('a', 'bouton bouton--principal fiche__cuisiner'), 'toque', T.fiche.cuisiner, 24);
 
   const menu = element('div', 'menu');
   const boutonMenu = element('button', 'bouton bouton--icone menu__declencheur');
@@ -187,22 +173,22 @@ export async function afficher(conteneur, params) {
   boutonMenu.setAttribute('aria-label', T.fiche.plusActions);
   boutonMenu.setAttribute('aria-expanded', 'false');
   boutonMenu.setAttribute('aria-controls', 'menu-fiche');
-  boutonMenu.innerHTML = SVG_PLUS;
+  boutonMenu.append(icone('points'));
 
   const listeMenu = element('ul', 'menu__liste');
   listeMenu.id = 'menu-fiche';
   listeMenu.setAttribute('role', 'list');
   listeMenu.hidden = true;
-  const modifier = avecIcone(element('a', 'menu__action'), SVG_MODIFIER, T.fiche.modifier);
+  const modifier = avecIcone(element('a', 'menu__action'), 'crayon', T.fiche.modifier);
   modifier.href = `#/edition/${idUrl}`;
-  const creerAction = (icone, libelle, classe = '') => {
-    const bouton = avecIcone(element('button', `menu__action ${classe}`.trim()), icone, libelle);
+  const creerAction = (nomIcone, libelle, classe = '') => {
+    const bouton = avecIcone(element('button', `menu__action ${classe}`.trim()), nomIcone, libelle);
     bouton.type = 'button';
     return bouton;
   };
-  const dupliquer = creerAction(SVG_DUPLIQUER, T.fiche.dupliquer);
-  const partager = creerAction(SVG_PARTAGER, T.fiche.partager);
-  const supprimer = creerAction(SVG_SUPPRIMER, T.fiche.supprimer, 'menu__action--danger');
+  const dupliquer = creerAction('copie', T.fiche.dupliquer);
+  const partager = creerAction('partage', T.fiche.partager);
+  const supprimer = creerAction('poubelle', T.fiche.supprimer, 'menu__action--danger');
   for (const action of [modifier, dupliquer, partager, supprimer]) {
     const item = element('li');
     item.append(action);
@@ -235,6 +221,8 @@ export async function afficher(conteneur, params) {
   favori.addEventListener('click', async () => {
     const attendu = favori.getAttribute('aria-pressed') !== 'true';
     favori.setAttribute('aria-pressed', String(attendu));
+    // Le cœur bat quand il se remplit (animation CSS, retirée à la fin)
+    favori.classList.toggle('fiche__favori--anime', attendu);
     try {
       const enregistre = await basculerFavori(recette.id);
       recette.favori = enregistre;
@@ -300,6 +288,8 @@ export async function afficher(conteneur, params) {
     fermerMenu({ rendreFocus: true });
     dialogue.showModal();
   });
+  favori.addEventListener('animationend', () => favori.classList.remove('fiche__favori--anime'));
+
   dialogue.addEventListener('close', async () => {
     if (dialogue.returnValue !== 'supprimer') return;
     try {

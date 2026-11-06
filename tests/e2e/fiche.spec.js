@@ -31,6 +31,21 @@ const plus = (page) => page.getByRole('button', { name: 'Une portion de plus' })
 const moins = (page) => page.getByRole('button', { name: 'Une portion de moins' });
 const valeurPortions = (page) => page.locator('.selecteur-portions__valeur');
 const boutonMenu = (page) => page.getByRole('button', { name: 'Plus d’actions' });
+/** Vrai dès 1024 px : la liste reste affichée à gauche de la fiche. */
+const coteACote = (page) => page.viewportSize().width >= 1024;
+
+/**
+ * Revient à la liste : bouton retour de la fiche sur mobile ; sur grand écran, où la
+ * liste est déjà à côté (et le bouton retour masqué), onglet Recettes.
+ */
+async function revenirALaListe(page) {
+  if (coteACote(page)) {
+    await expect(page.getByRole('link', { name: 'Retour à la liste' })).toBeHidden();
+    await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: 'Recettes' }).click();
+  } else {
+    await page.getByRole('link', { name: 'Retour à la liste' }).click();
+  }
+}
 
 for (const largeur of [360, 1024]) {
   test.describe(`à ${largeur} px`, () => {
@@ -147,9 +162,11 @@ test("l'en-tête affiche le visuel, le titre, les catégories et les infos", asy
   await expect(page.locator('.fiche__source')).toHaveText('Source : Cahier des charges');
   await expect(page.locator('.fiche__source a')).toHaveCount(0);
 
-  // La barre d'onglets reste, le bouton « + » laisse la place à « Cuisiner »
+  // La barre d'onglets reste, le bouton « + » laisse la place à « Cuisiner » sur mobile ;
+  // sur grand écran, il reste dans l'en-tête
   await expect(page.locator('.barre-onglets')).toBeVisible();
-  await expect(page.locator('.bouton-flottant')).toBeHidden();
+  if (coteACote(page)) await expect(page.locator('.bouton-flottant')).toBeVisible();
+  else await expect(page.locator('.bouton-flottant')).toBeHidden();
 });
 
 test('le favori se met à jour aussitôt et apparaît dans l’onglet Favoris', async ({ page }) => {
@@ -158,9 +175,15 @@ test('le favori se met à jour aussitôt et apparaît dans l’onglet Favoris', 
   await expect(favori).toHaveAttribute('aria-pressed', 'false');
   await favori.click();
   await expect(favori).toHaveAttribute('aria-pressed', 'true');
+  // Sur grand écran, la liste d'à côté se met à jour aussitôt (badge favori)
+  if (coteACote(page)) {
+    const carte = page.locator('.carte-recette[aria-current="page"]');
+    await expect(carte).toHaveAttribute('href', '#/recette/exemple-gratin-dauphinois');
+    await expect(carte.locator('.carte-recette__favori')).toBeVisible();
+  }
 
   // Le bouton retour ramène à la liste ; le favori est enregistré
-  await page.getByRole('link', { name: 'Retour à la liste' }).click();
+  await revenirALaListe(page);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mes recettes');
   await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: 'Favoris' }).click();
   await expect(page.locator('.grille-recettes .carte-recette__titre')).toHaveText(['Gratin dauphinois']);
@@ -204,7 +227,7 @@ test('dupliquer ouvre la copie', async ({ page }) => {
   await expect(page.getByRole('status', { name: 'Notifications' })).toHaveText('Copie créée. Vous pouvez maintenant la modifier.');
   // La copie n'hérite pas du favori
   await expect(page.getByRole('button', { name: 'Favori' })).toHaveAttribute('aria-pressed', 'false');
-  await page.getByRole('link', { name: 'Retour à la liste' }).click();
+  await revenirALaListe(page);
   await expect(page.locator('.grille-recettes .carte-recette')).toHaveCount(7);
 });
 

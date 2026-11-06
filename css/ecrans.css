@@ -6,6 +6,8 @@
 /* Commun : titre d'écran (reçoit le focus à chaque navigation) */
 .titre-ecran {
   font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
   margin-bottom: var(--espace);
 }
 
@@ -15,7 +17,7 @@
 .liste__outils {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--espace-m);
   margin-bottom: var(--espace);
 }
 
@@ -27,27 +29,49 @@
 .recherche__icone {
   position: absolute;
   top: 50%;
-  left: 14px;
-  width: 20px;
-  height: 20px;
+  left: var(--espace-m);
   translate: 0 -50%;
-  fill: none;
-  stroke: var(--texte-doux);
-  stroke-width: 2;
-  stroke-linecap: round;
+  color: var(--texte-doux);
   pointer-events: none;
 }
 
 .recherche__saisie {
+  min-height: 48px;
   padding-left: 44px;
-  border-radius: 999px;
+  border-color: var(--contour);
+  border-radius: var(--rayon-pilule);
+  background: var(--surface);
+  box-shadow: var(--ombre-carte);
+}
+
+/* Le contour du champ reste contrasté (≥ 3:1) là où l'ombre ne se voit pas : en sombre */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) .recherche__saisie {
+    border-color: var(--texte-doux);
+  }
+}
+
+:root[data-theme="sombre"] .recherche__saisie {
+  border-color: var(--texte-doux);
 }
 
 /* Les puces débordent jusqu'aux bords de l'écran pour inviter au défilement */
 .liste__puces {
-  margin-inline: calc(-1 * var(--espace));
-  padding: 6px var(--espace);
-  scroll-padding-inline: var(--espace);
+  margin-inline: calc(-1 * var(--marge-gauche)) calc(-1 * var(--marge-droite));
+  padding: var(--espace-xs) var(--marge-droite) var(--espace-s) var(--marge-gauche);
+  scroll-padding-inline: var(--marge-gauche);
+}
+
+/* Nom de catégorie très long : tronqué avec des points de suspension (le nom complet
+   reste le nom accessible du bouton) */
+.liste__puces .puce {
+  display: block;
+  flex: none;
+  max-width: 15rem;
+  overflow: hidden;
+  /* 8 + 26 + 8 px et la bordure : 44 px */
+  line-height: 26px;
+  text-overflow: ellipsis;
 }
 
 .liste__barre {
@@ -55,7 +79,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 12px;
+  gap: var(--espace-s) var(--espace-m);
 }
 
 .liste__compte {
@@ -65,7 +89,7 @@
 .tri {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espace-s);
   color: var(--texte-doux);
   font-size: 0.9375rem;
 }
@@ -85,9 +109,9 @@
 
 .tri__menu {
   min-height: var(--cible);
-  padding: 8px 12px;
+  padding: var(--espace-s) var(--espace-m);
   border: 1px solid var(--texte-doux);
-  border-radius: 999px;
+  border-radius: var(--rayon-pilule);
   background: var(--surface);
   color: var(--texte);
   font-size: 1rem;
@@ -97,7 +121,7 @@
 .grille-recettes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--espace-m);
   padding: 0;
   list-style: none;
 }
@@ -113,16 +137,75 @@
   .grille-recettes {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  /* À côté de la fiche, la liste est étroite : deux colonnes, comme sur mobile */
+  .double .grille-recettes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espace-m);
+  }
+
+  .double .liste__puces {
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .double .titre-ecran {
+    font-size: 1.75rem;
+  }
+
+  /* Aucune recette : l'invitation à commencer reste centrée sur toute la largeur */
+  .double .etat-vide {
+    padding-block: var(--espace-xl);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Grand écran : volet de droite sans recette ouverte (js/app.js → creerInvitation)
+   -------------------------------------------------------------------------- */
+.invitation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espace-m);
+  min-height: min(32rem, calc(100dvh - var(--hauteur-entete) - 2 * var(--espace-l)));
+  padding: var(--espace-xl);
+  border: 2px dashed var(--bordure);
+  border-radius: var(--rayon);
+  text-align: center;
+}
+
+.invitation__pastille {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  margin-bottom: var(--espace-s);
+  border-radius: 50%;
+  background: var(--teinte);
+  color: var(--accent);
+}
+
+.invitation__titre {
+  font-size: 1.375rem;
+}
+
+.invitation__texte {
+  max-width: 22rem;
 }
 
 /* --------------------------------------------------------------------------
    E2 — Fiche recette (js/ecrans/fiche.js)
    -------------------------------------------------------------------------- */
 .fiche {
+  /* Conteneur : les colonnes suivent la place de la fiche (page ou volet de droite) */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--espace);
 }
+
 
 /* Visuel pleine largeur : il déborde jusqu'aux bords de l'écran sur mobile */
 .fiche__media {
@@ -144,7 +227,8 @@
   top: 12px;
   border-color: transparent;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
-  box-shadow: 0 2px 8px var(--ombre);
+  box-shadow: 0 2px 8px var(--ombre-haute);
+  color: var(--texte);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -162,24 +246,59 @@
   color: var(--accent);
 }
 
-.fiche__favori svg {
-  transition: fill var(--duree) var(--courbe), transform var(--duree) var(--courbe);
+/* Cœur vide ou plein selon aria-pressed */
+.fiche__favori .icone--coeur-plein,
+.fiche__favori[aria-pressed="true"] .icone--coeur {
+  display: none;
 }
 
-.fiche__favori[aria-pressed="true"] svg {
-  fill: currentColor;
-  transform: scale(1.08);
+.fiche__favori[aria-pressed="true"] .icone--coeur-plein {
+  display: block;
+}
+
+/* Ajout aux favoris : le cœur bat une fois et une onde s'en échappe */
+.fiche__favori--anime .icone--coeur-plein {
+  animation: battement var(--duree-longue) var(--courbe);
+}
+
+.fiche__favori--anime::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: onde var(--duree-longue) ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes battement {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes onde {
+  from {
+    opacity: 0.7;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
 }
 
 .fiche__titres {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
+  gap: var(--espace-m);
+  margin-top: var(--espace-xs);
 }
 
 .fiche__titre {
   font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 .fiche__description {
@@ -191,22 +310,41 @@
 /* Bloc infos : rangée de petites cartes arrondies */
 .fiche__infos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(6.25rem, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espace-s);
+}
+
+/* Sur deux colonnes, le total ne reste pas seul sur sa ligne : il la prend toute */
+.info--total:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* Fiche assez large : toutes les infos sur une rangée */
+@container (min-width: 480px) {
+  .fiche__infos {
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  }
+
+  .info--total:nth-child(odd) {
+    grid-column: auto;
+  }
 }
 
 .info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px var(--espace);
-  border: 1px solid var(--bordure);
+  gap: var(--espace-xs);
+  padding: var(--espace-m) var(--espace);
+  border: 1px solid var(--contour);
   border-radius: var(--rayon);
   background: var(--surface);
-  box-shadow: 0 1px 3px var(--ombre);
+  box-shadow: var(--ombre-carte);
 }
 
 .info__libelle {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
   color: var(--texte-doux);
   font-size: 0.875rem;
 }
@@ -215,15 +353,20 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--espace-s);
   font-size: 1.0625rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
+/* Temps total : la seule info teintée */
 .info--total {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--bordure));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--contour));
+  background: var(--teinte);
+}
+
+.info--total .info__libelle {
+  color: var(--accent);
 }
 
 /* Blocs ingrédients, étapes, notes */
@@ -236,7 +379,7 @@
 .fiche__bloc {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--espace-m);
 }
 
 .fiche__bloc-entete {
@@ -244,7 +387,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 12px;
+  gap: var(--espace-s) var(--espace-m);
 }
 
 .fiche__bloc-titre {
@@ -252,9 +395,12 @@
 }
 
 .ingredients__section {
-  margin-top: 8px;
-  color: var(--accent);
-  font-size: 1rem;
+  margin-top: var(--espace-s);
+  color: var(--texte-doux);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .ingredients {
@@ -263,7 +409,7 @@
 }
 
 .ingredient {
-  padding: 10px 0;
+  padding: var(--espace-s) 0;
   border-bottom: 1px solid var(--bordure);
   font-size: 1.0625rem;
 }
@@ -285,17 +431,18 @@
 .etapes {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--espace-l);
   counter-reset: etape;
 }
 
 .etape {
   display: grid;
-  grid-template-columns: 2rem 1fr;
-  gap: 12px;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--espace-m);
   counter-increment: etape;
 }
 
+/* Numéro d'étape : pastille teintée, l'accent plein reste aux actions */
 .etape::before {
   content: counter(etape);
   display: grid;
@@ -303,9 +450,9 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--sur-accent);
-  font-weight: 700;
+  background: var(--teinte);
+  color: var(--accent);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -327,34 +474,29 @@
 /* Barre d'actions : collée en bas, dans la zone du pouce, au-dessus des onglets */
 .fiche__actions {
   position: sticky;
-  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + 12px);
+  bottom: calc(var(--hauteur-onglets) + var(--sa-bas) + var(--espace-m));
   z-index: 15;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--espace-m);
   width: 100%;
   max-width: 32rem;
-  margin: 8px auto 0;
+  margin: var(--espace-s) auto 0;
 }
 
 .fiche__cuisiner {
   flex: 1;
   min-height: 56px;
   font-size: 1.125rem;
-  box-shadow: 0 6px 18px var(--ombre), 0 2px 4px var(--ombre);
-}
-
-.fiche__cuisiner svg {
-  width: 24px;
-  height: 24px;
+  box-shadow: var(--ombre-flottante);
 }
 
 .fiche__actions .menu__declencheur {
   width: 56px;
   height: 56px;
-  border: 1px solid var(--bordure);
+  border: 1px solid var(--contour);
   background: var(--surface);
-  box-shadow: 0 6px 18px var(--ombre), 0 2px 4px var(--ombre);
+  box-shadow: var(--ombre-flottante);
 }
 
 .fiche__actions .menu__declencheur[aria-expanded="true"] {
@@ -362,9 +504,16 @@
   color: var(--accent);
 }
 
-.fiche__actions .menu__declencheur svg {
-  fill: currentColor;
-  stroke: none;
+/* Grand écran : plus de barre d'onglets sous la barre d'actions */
+@media (min-width: 1024px) {
+  .fiche__actions {
+    bottom: calc(var(--sa-bas) + var(--espace-l));
+  }
+
+  /* À côté de la liste, le retour est inutile */
+  .double .fiche__retour {
+    display: none;
+  }
 }
 
 /* Identifiant inconnu */
@@ -390,7 +539,10 @@
     aspect-ratio: 3 / 1;
     max-height: 260px;
   }
+}
 
+/* Ingrédients et étapes en deux colonnes dès que la fiche dispose de 600 px */
+@container (min-width: 600px) {
   .fiche__colonnes {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   }
@@ -422,7 +574,7 @@
 }
 
 .edition__section fieldset > legend {
-  margin-bottom: 6px;
+  margin-bottom: var(--espace-s);
   padding: 0;
 }
 
@@ -443,7 +595,7 @@
 .edition__temps-grille {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 .edition__temps-libelle {
@@ -452,7 +604,7 @@
 }
 
 .edition__temps .champ__erreur {
-  margin-top: 6px;
+  margin-top: var(--espace-s);
 }
 
 .edition__portions {
@@ -460,20 +612,28 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 /* Catégories : puces sur plusieurs lignes, puis le champ de création */
 .edition__categories {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--espace-m);
 }
 
 .edition__puces {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--espace-s);
+}
+
+/* Un nom de catégorie très long passe à la ligne plutôt que de déborder */
+.edition__puces .puce {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
 }
 
 .edition__puces:empty {
@@ -482,7 +642,7 @@
 
 .edition__nouvelle-categorie {
   display: flex;
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 .edition__nouvelle-categorie .champ__saisie {
@@ -494,7 +654,7 @@
 .bandeau-brouillon {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--espace-s);
   margin-bottom: var(--espace);
   border-color: var(--accent);
 }
@@ -516,9 +676,9 @@
   grid-template-areas:
     "contenu poignee"
     "contenu menu";
-  gap: 8px;
+  gap: var(--espace-s);
   align-items: center;
-  padding-block: 10px;
+  padding-block: var(--espace-m);
   border-bottom: 1px solid var(--bordure);
   background: var(--surface);
 }
@@ -554,12 +714,6 @@
   background: color-mix(in srgb, var(--texte) 8%, transparent);
 }
 
-.ligne__poignee svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
-}
-
 /* Ligne en cours de glissement : soulevée, au-dessus des autres */
 .lignes--glissement {
   user-select: none;
@@ -571,7 +725,7 @@
   z-index: 20;
   border-radius: var(--rayon-petit);
   outline: 2px solid var(--accent);
-  box-shadow: 0 12px 28px var(--ombre), 0 2px 6px var(--ombre);
+  box-shadow: var(--ombre-flottante);
 }
 
 .ligne--glissee .ligne__poignee {
@@ -593,7 +747,7 @@
     "quantite unite"
     "nom nom"
     "precision precision";
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 .ligne-ingredient--libre {
@@ -601,7 +755,7 @@
 }
 
 .ligne-ingredient .champ__saisie {
-  padding-inline: 10px;
+  padding-inline: var(--espace-m);
 }
 
 .ligne-ingredient__quantite { grid-area: quantite; }
@@ -617,7 +771,7 @@
 .ligne-etape {
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--espace-s);
   align-items: start;
 }
 
@@ -626,11 +780,11 @@
   place-items: center;
   width: 2rem;
   height: 2rem;
-  margin-top: 6px;
+  margin-top: var(--espace-s);
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--sur-accent);
-  font-weight: 700;
+  background: var(--teinte);
+  color: var(--accent);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -650,10 +804,10 @@
   bottom: 0;
   z-index: 15;
   display: flex;
-  gap: 10px;
-  margin-inline: calc(-1 * var(--espace));
+  gap: var(--espace-m);
+  margin-inline: calc(-1 * var(--marge-gauche)) calc(-1 * var(--marge-droite));
   margin-bottom: calc(-1 * (var(--espace) + var(--sa-bas)));
-  padding: 12px var(--espace) calc(12px + var(--sa-bas));
+  padding: var(--espace-m) var(--marge-droite) calc(var(--espace-m) + var(--sa-bas)) var(--marge-gauche);
   border-top: 1px solid var(--bordure);
   background: color-mix(in srgb, var(--fond) 92%, transparent);
   backdrop-filter: blur(12px);
@@ -688,7 +842,8 @@ body:has(.edition__actions) .toasts {
 
   .edition__actions {
     margin-inline: 0;
-    border: 1px solid var(--bordure);
+    padding-inline: var(--espace);
+    border: 1px solid var(--contour);
     border-bottom: 0;
     border-radius: var(--rayon) var(--rayon) 0 0;
   }
@@ -707,7 +862,7 @@ body:has(.cuisine) .entete {
 .cuisine {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--espace-m);
   width: 100%;
   max-width: 48rem;
   min-height: calc(100dvh - 2 * var(--espace) - var(--sa-bas));
@@ -718,7 +873,7 @@ body:has(.cuisine) .entete {
 .cuisine__entete {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 .cuisine__titre {
@@ -731,12 +886,13 @@ body:has(.cuisine) .entete {
 }
 
 .cuisine__fermer {
-  border: 1px solid var(--bordure);
+  border: 1px solid var(--contour);
   background: var(--surface);
+  box-shadow: var(--ombre-carte);
 }
 
 .cuisine__bouton-ingredients {
-  padding-inline: 14px;
+  padding-inline: var(--espace-m);
   border-width: 1px;
 }
 
@@ -744,7 +900,7 @@ body:has(.cuisine) .entete {
 .cuisine__progression {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--espace-m);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -757,7 +913,7 @@ body:has(.cuisine) .entete {
   flex: 1;
   height: 8px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--rayon-pilule);
   background: var(--bordure);
   color: var(--accent);
   appearance: none;
@@ -767,18 +923,18 @@ body:has(.cuisine) .entete {
 
 .cuisine__barre::-webkit-progress-bar {
   background: var(--bordure);
-  border-radius: 999px;
+  border-radius: var(--rayon-pilule);
 }
 
 .cuisine__barre::-webkit-progress-value {
   background: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--rayon-pilule);
   transition: width var(--duree) var(--courbe);
 }
 
 .cuisine__barre::-moz-progress-bar {
   background: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--rayon-pilule);
 }
 
 .cuisine__veille {
@@ -801,11 +957,11 @@ body:has(.cuisine) .entete {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: clamp(20px, 4vw, 40px);
-  border: 1px solid var(--bordure);
+  padding: clamp(var(--espace-l), 4vw, 40px);
+  border: 1px solid var(--contour);
   border-radius: var(--rayon);
   background: var(--surface);
-  box-shadow: 0 1px 3px var(--ombre);
+  box-shadow: var(--ombre-carte);
   color: var(--texte);
 }
 
@@ -826,7 +982,7 @@ body:has(.cuisine) .entete {
   padding: 0.05em 0.2em;
   border: 0;
   border-bottom: 3px solid var(--accent);
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--espace-s) var(--espace-s) 0 0;
   background: color-mix(in srgb, var(--accent) 14%, var(--surface));
   color: var(--texte);
   font: inherit;
@@ -871,10 +1027,10 @@ body:has(.cuisine) .entete {
   bottom: 0;
   z-index: 15;
   display: flex;
-  gap: 12px;
-  margin-inline: calc(-1 * var(--espace));
+  gap: var(--espace-m);
+  margin-inline: calc(-1 * var(--marge-gauche)) calc(-1 * var(--marge-droite));
   margin-bottom: calc(-1 * (var(--espace) + var(--sa-bas)));
-  padding: 12px var(--espace) calc(12px + var(--sa-bas));
+  padding: var(--espace-m) var(--marge-droite) calc(var(--espace-m) + var(--sa-bas)) var(--marge-gauche);
   background: var(--fond);
 }
 
@@ -889,8 +1045,10 @@ body:has(.cuisine) .entete {
 }
 
 @media (min-width: 768px) {
+  /* Les boutons s'alignent sur les bords de la carte de l'étape */
   .cuisine__navigation {
     margin-inline: 0;
+    padding-inline: 0;
   }
 }
 
@@ -907,7 +1065,7 @@ body:has(.cuisine) .entete {
 .reglages__bloc {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--espace-m);
   min-width: 0;
 }
 
@@ -924,9 +1082,9 @@ body:has(.cuisine) .entete {
 .reglages__categorie {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espace-xs);
   min-height: calc(var(--cible) + 12px);
-  padding-block: 6px;
+  padding-block: var(--espace-s);
   border-bottom: 1px solid var(--bordure);
 }
 
@@ -957,7 +1115,7 @@ body:has(.cuisine) .entete {
 }
 
 .reglages__renommer {
-  margin-block: 2px;
+  margin-block: var(--espace-xs);
 }
 
 /* Création : champ et bouton sur une ligne, bouton aligné sur le champ */
@@ -965,8 +1123,8 @@ body:has(.cuisine) .entete {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 8px;
-  padding-top: 4px;
+  gap: var(--espace-s);
+  padding-top: var(--espace-xs);
 }
 
 .reglages__creation-champ {
@@ -975,18 +1133,18 @@ body:has(.cuisine) .entete {
 
 .reglages__creation .bouton {
   /* Hauteur du libellé + espacement : le bouton s'aligne sur la saisie */
-  margin-top: calc(1.5em + 6px);
+  margin-top: calc(1.5em + var(--espace-s));
 }
 
 /* Données : actions empilées, pleine largeur sur mobile */
 .reglages__actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--espace-m);
 }
 
 .reglages__actions > .champ__aide {
-  margin-top: -6px;
+  margin-top: calc(-1 * var(--espace-xs));
 }
 
 /* Le champ fichier est caché : son libellé en forme de bouton porte le focus visible */
@@ -1000,7 +1158,7 @@ body:has(.cuisine) .entete {
 }
 
 .reglages__effacer {
-  margin-top: 8px;
+  margin-top: var(--espace-s);
   border-color: var(--danger);
   color: var(--danger);
 }
@@ -1019,8 +1177,8 @@ body:has(.cuisine) .entete {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 2px 16px;
-  padding-block: 10px;
+  gap: var(--espace-xs) var(--espace);
+  padding-block: var(--espace-m);
   border-bottom: 1px solid var(--bordure);
 }
 
@@ -1042,7 +1200,7 @@ body:has(.cuisine) .entete {
 .reglages__dialogue-texte {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 .reglages__resume {

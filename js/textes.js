@@ -19,6 +19,9 @@ export const T = {
     // Bandeau de mise à jour (service worker)
     nouvelleVersion: 'Nouvelle version disponible',
     recharger: 'Recharger',
+    // Grand écran : volet de droite quand aucune recette n'est ouverte
+    invitationTitre: 'Choisissez une recette',
+    invitationTexte: 'Sa fiche s’affichera ici, à côté de la liste.',
   },
 
   // E1 — Liste des recettes

@@ -49,11 +49,12 @@ for (const largeur of [360, 768, 1280]) {
       await expect(compte(page)).toHaveAttribute('aria-live', 'polite');
       await expect(page.getByRole('heading', { name: 'Votre carnet est encore vide' })).toHaveCount(0);
 
-      // Grille : 2 colonnes sous 768 px, 3 jusqu'à 1024 px, 4 au-delà
+      // Grille : 2 colonnes sous 768 px, 3 jusqu'à 1024 px ; au-delà, la liste partage
+      // l'écran avec la fiche (volet de gauche) et revient à 2 colonnes
       const colonnes = await page.locator('.grille-recettes').evaluate(
         (grille) => getComputedStyle(grille).gridTemplateColumns.split(' ').length,
       );
-      expect(colonnes).toBe(largeur < 768 ? 2 : largeur < 1024 ? 3 : 4);
+      expect(colonnes).toBe(largeur < 768 ? 2 : largeur < 1024 ? 3 : 2);
 
       // Aucun défilement horizontal de la page
       const debordement = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -75,7 +76,9 @@ test('la carte affiche le titre, le temps total, la difficulté et mène à la f
   await expect(carte).toHaveAttribute('href', '#/recette/exemple-tarte-poireaux');
   await expect(carte.locator('.carte-recette__temps')).toHaveText(/55\s?min/);
   await expect(carte.getByRole('img', { name: 'Difficulté : facile' })).toBeVisible();
-  await expect(carte.locator('.difficulte__point--plein')).toHaveCount(1);
+  // Une toque remplie sur trois
+  await expect(carte.locator('.difficulte__toque')).toHaveCount(3);
+  await expect(carte.locator('.difficulte__toque--pleine')).toHaveCount(1);
   await expect(carte.locator('.visuel__initiale')).toHaveText('T');
 
   // Le visuel par défaut est stable : même couleur après rechargement
@@ -181,7 +184,7 @@ test('le bouton « + » mène à #/nouvelle', async ({ page }) => {
 
 test('les cibles tactiles de la liste mesurent au moins 44 px', async ({ page }) => {
   await chargerExemples(page);
-  await page.locator('#app .ecran').evaluate((ecran) => Promise.all(ecran.getAnimations().map((a) => a.finished)));
+  await page.locator('#app .ecran').evaluateAll((ecrans) => Promise.all(ecrans.flatMap((e) => e.getAnimations()).map((a) => a.finished)));
   const cibles = page.locator('#app a, #app button, #app select, #app input');
   const nombre = await cibles.count();
   expect(nombre).toBeGreaterThan(NOMBRE_EXEMPLES);

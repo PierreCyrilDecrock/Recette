@@ -63,8 +63,13 @@ test("le bouton « + » ouvre l'édition et masque la navigation", async ({ page
 test('les routes à paramètre transmettent leur identifiant et leur requête', async ({ page }) => {
   await page.goto('./#/recette/tarte%20aux%20poireaux');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recette introuvable');
-  // La fiche n'est pas un onglet : aucun n'est actif
-  await expect(page.locator('.barre-onglets [aria-current]')).toHaveCount(0);
+  // La fiche n'est pas un onglet : aucun n'est actif sur mobile ; sur grand écran, la liste
+  // des recettes reste affichée à côté, son onglet aussi
+  if (page.viewportSize().width < 1024) {
+    await expect(page.locator('.barre-onglets [aria-current]')).toHaveCount(0);
+  } else {
+    await expect(page.locator('.barre-onglets [aria-current]')).toHaveText('Recettes');
+  }
 
   // Une requête inconnue est sans effet sur l'écran
   await page.goto('./#/reglages?section=theme');
@@ -96,14 +101,14 @@ test('le thème suit le système et peut être forcé', async ({ page }) => {
 
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('./');
-  expect(await fond()).toBe('rgb(250, 246, 242)');
+  expect(await fond()).toBe('rgb(246, 240, 234)');
 
   await page.emulateMedia({ colorScheme: 'dark' });
   expect(await fond()).toBe('rgb(23, 19, 17)');
 
   // data-theme force le thème, quel que soit le réglage du système
   await page.evaluate(() => { document.documentElement.dataset.theme = 'clair'; });
-  expect(await fond()).toBe('rgb(250, 246, 242)');
+  expect(await fond()).toBe('rgb(246, 240, 234)');
 
   await page.emulateMedia({ colorScheme: 'light' });
   await page.evaluate(() => { document.documentElement.dataset.theme = 'sombre'; });
@@ -114,7 +119,7 @@ test('les cibles tactiles de la coquille mesurent au moins 44 px', async ({ page
   await page.goto('./');
   // Attendre la fin de l'animation d'apparition de l'écran : pendant le glissement,
   // la position sous-pixel fausse la mesure (43,99997 px au lieu de 44).
-  await page.locator('#app .ecran').evaluate((ecran) => Promise.all(ecran.getAnimations().map((a) => a.finished)));
+  await page.locator('#app .ecran').evaluateAll((ecrans) => Promise.all(ecrans.flatMap((e) => e.getAnimations()).map((a) => a.finished)));
   const cibles = page.locator('.barre-onglets a, .bouton-flottant, .entete a, #app a, #app button');
   const nombre = await cibles.count();
   expect(nombre).toBeGreaterThan(0);

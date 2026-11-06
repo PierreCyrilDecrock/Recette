@@ -6,49 +6,78 @@
    Thèmes
    Le thème suit prefers-color-scheme grâce à color-scheme + light-dark().
    L'attribut data-theme="clair|sombre" sur <html> force l'un des deux.
+   En clair, les cartes se détachent du fond par une ombre légère ; en sombre, où une
+   ombre ne se verrait pas, par un contour fin (--contour).
 
    Contrastes WCAG (calculés, cible ≥ 4,5:1 pour le texte) :
    Thème clair                         Thème sombre
    --texte       / --surface  15,71    --texte       / --surface  14,46
+   --texte       / --fond     13,89    --texte       / --fond     16,22
    --texte-doux  / --surface   6,33    --texte-doux  / --surface   7,69
+   --texte-doux  / --fond      5,60    --texte-doux  / --fond      8,63
    --accent      / --surface   5,21    --accent      / --surface   6,62
-   --accent      / --fond      4,84    --accent      / --fond      7,43
+   --accent      / --fond      4,61    --accent      / --fond      7,43
+   --accent      / --teinte    4,62    --accent      / --teinte    5,81
    --sur-accent  / --accent    5,21    --sur-accent  / --accent    7,24
    --danger      / --surface   6,54    --danger      / --surface   7,21
    --sur-accent  / --danger    6,54    --sur-accent  / --danger    7,88
+   (--teinte : 8 % d'accent sur la surface, fond des numéros d'étape)
    -------------------------------------------------------------------------- */
 :root {
   color-scheme: light dark;
 
-  /* Fond de page et surfaces (cartes, barres) */
-  --fond: light-dark(#faf6f2, #171311);
+  /* Fond de page (doux) et surfaces (cartes, barres), un peu plus claires */
+  --fond: light-dark(#f6f0ea, #171311);
   --surface: light-dark(#ffffff, #241e1b);
   /* Texte principal et secondaire */
   --texte: light-dark(#2b211c, #f6efea);
   --texte-doux: light-dark(#6b5d54, #bcafa6);
-  /* Bordures décoratives (cartes, séparateurs) */
+  /* Séparateurs et bordures décoratives */
   --bordure: light-dark(#e9e0d8, #3b322d);
-  /* Accent orange tomate et texte posé dessus */
+  /* Contour des cartes : presque invisible en clair (l'ombre suffit), fin en sombre */
+  --contour: light-dark(rgb(60 30 15 / 0.06), #3a302b);
+  /* Accent orange tomate (avec parcimonie) et texte posé dessus */
   --accent: light-dark(#c43d1d, #ff7f5e);
   --sur-accent: light-dark(#ffffff, #22130e);
+  --teinte: color-mix(in srgb, var(--accent) 8%, var(--surface));
   /* Actions destructrices */
   --danger: light-dark(#b3261e, #ff8a80);
-  /* Ombre légère des cartes et du bouton flottant */
-  --ombre: light-dark(rgb(60 30 15 / 0.08), rgb(0 0 0 / 0.4));
+  /* Ombres : légères pour les cartes (absentes en sombre), plus marquées pour ce qui flotte */
+  --ombre: light-dark(rgb(60 30 15 / 0.07), transparent);
+  --ombre-haute: light-dark(rgb(60 30 15 / 0.16), rgb(0 0 0 / 0.5));
+  --ombre-carte: 0 1px 2px var(--ombre), 0 4px 14px var(--ombre);
+  --ombre-flottante: 0 10px 28px var(--ombre-haute), 0 2px 6px var(--ombre-haute);
 
-  /* Formes et espacements */
-  --rayon: 16px;
-  --rayon-petit: 10px;
+  /* Échelle d'espacement : multiples de 4 px */
+  --espace-xs: 4px;
+  --espace-s: 8px;
+  --espace-m: 12px;
   --espace: 16px;
+  --espace-l: 24px;
+  --espace-xl: 32px;
+
+  /* Rayons */
+  --rayon: 16px;
+  --rayon-petit: 12px;
+  --rayon-pilule: 999px;
   --cible: 44px;
 
   /* Mouvements (150 à 250 ms) */
   --duree: 200ms;
+  --duree-courte: 150ms;
+  --duree-longue: 250ms;
   --courbe: cubic-bezier(0.2, 0, 0, 1);
+  /* Retour au toucher : légère mise à l'échelle */
+  --pression: 0.96;
 
   /* Hauteurs de la barre d'onglets et de l'en-tête (hors safe areas) */
   --hauteur-onglets: 64px;
   --hauteur-entete: 56px;
+
+  /* Largeur maximale du contenu et marges latérales (safe areas comprises) */
+  --largeur-max: 1200px;
+  --marge-gauche: calc(var(--espace) + var(--sa-gauche));
+  --marge-droite: calc(var(--espace) + var(--sa-droite));
 
   /* Safe areas (encoches, barre système) */
   --sa-haut: env(safe-area-inset-top, 0px);
@@ -59,6 +88,15 @@
 
 :root[data-theme="clair"] { color-scheme: light; }
 :root[data-theme="sombre"] { color-scheme: dark; }
+
+/* Grand écran : en-tête plus haut, contenu centré (la marge suit la largeur maximale) */
+@media (min-width: 1024px) {
+  :root {
+    --hauteur-entete: 64px;
+    --marge-gauche: max(var(--espace-l) + var(--sa-gauche), (100% - var(--largeur-max)) / 2);
+    --marge-droite: max(var(--espace-l) + var(--sa-droite), (100% - var(--largeur-max)) / 2);
+  }
+}
 
 /* --------------------------------------------------------------------------
    Reset léger
@@ -95,6 +133,11 @@ video,
 canvas {
   display: block;
   max-width: 100%;
+}
+
+/* Icônes de js/icones.js : jamais écrasées par un conteneur flexible */
+.icone {
+  flex: none;
 }
 
 input,
@@ -152,16 +195,26 @@ ol[role="list"] {
 }
 
 /* --------------------------------------------------------------------------
-   Mise en page générale : en-tête, contenu, zone du pouce
+   En-tête : la marque ; sur grand écran, aussi les onglets et « Nouvelle recette ».
+   Le flou est porté par ::before : un backdrop-filter sur l'en-tête lui-même ferait de
+   lui le repère des éléments fixes qu'il contient (barre d'onglets, bouton « + »).
    -------------------------------------------------------------------------- */
 .entete {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 30;
   display: flex;
   align-items: center;
+  gap: var(--espace-l);
   min-height: calc(var(--hauteur-entete) + var(--sa-haut));
-  padding: var(--sa-haut) calc(var(--espace) + var(--sa-droite)) 0 calc(var(--espace) + var(--sa-gauche));
+  padding: var(--sa-haut) var(--marge-droite) 0 var(--marge-gauche);
+}
+
+.entete::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: color-mix(in srgb, var(--fond) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -170,35 +223,31 @@ ol[role="list"] {
 .entete__marque {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espace-s);
   min-height: var(--cible);
   color: var(--texte);
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   text-decoration: none;
   border-radius: var(--rayon-petit);
 }
 
 .entete__logo {
-  width: 28px;
-  height: 28px;
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  color: var(--accent);
 }
 
+/* --------------------------------------------------------------------------
+   Contenu
+   -------------------------------------------------------------------------- */
 .contenu {
   width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
   padding:
     var(--espace)
-    calc(var(--espace) + var(--sa-droite))
+    var(--marge-droite)
     /* Laisse la place à la barre d'onglets et au bouton flottant */
     calc(var(--hauteur-onglets) + 88px + var(--sa-bas))
-    calc(var(--espace) + var(--sa-gauche));
+    var(--marge-gauche);
 }
 
 /* En mode immersif (cuisine, édition), ni barre d'onglets ni bouton flottant */
@@ -206,9 +255,73 @@ body[data-immersif] .contenu {
   padding-bottom: calc(var(--espace) + var(--sa-bas));
 }
 
-/* Apparition douce de chaque écran */
+/* Grand écran : les onglets sont dans l'en-tête, plus rien à réserver en bas */
+@media (min-width: 1024px) {
+  .contenu {
+    padding-top: var(--espace-l);
+    padding-bottom: calc(var(--espace-xl) + var(--sa-bas));
+  }
+
+  body[data-immersif] .contenu {
+    padding-bottom: calc(var(--espace) + var(--sa-bas));
+  }
+}
+
+/* Hôte d'un écran (js/app.js → creerHote) : sans boîte, sans effet sur la mise en page */
+.hote-ecran {
+  display: contents;
+}
+
+/* --------------------------------------------------------------------------
+   Grand écran : liste à gauche (défilement propre, collée sous l'en-tête),
+   fiche à droite (elle défile avec la page). Voir afficherDouble dans js/app.js.
+   -------------------------------------------------------------------------- */
+.double {
+  display: grid;
+  grid-template-columns: clamp(20rem, 32vw, 27rem) minmax(0, 1fr);
+  gap: var(--espace-l);
+  align-items: start;
+}
+
+.double__liste {
+  --haut-volet: calc(var(--hauteur-entete) + var(--sa-haut) + var(--espace-l));
+  position: sticky;
+  top: var(--haut-volet);
+  max-height: calc(100dvh - var(--haut-volet) - var(--espace));
+  /* Marge intérieure : les anneaux de focus et les ombres ne sont pas rognés */
+  margin: calc(-1 * var(--espace-s));
+  padding: var(--espace-s);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bordure) transparent;
+}
+
+.double__detail {
+  min-width: 0;
+}
+
+/* Aucune recette du tout : la liste (et son invitation à commencer) prend toute la place */
+.double[data-detail="vide"]:has(.liste__outils[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.double[data-detail="vide"]:has(.liste__outils[hidden]) .double__detail {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Changement d'écran
+   Avec l'API View Transitions (classe transitions-vues posée par app.js), l'ancien écran
+   s'efface pendant que le nouveau monte légèrement ; en mode double, seul le détail bouge.
+   Sans elle, chaque écran apparaît par l'animation « apparition ».
+   -------------------------------------------------------------------------- */
 .ecran {
   animation: apparition var(--duree) var(--courbe);
+}
+
+.transitions-vues .ecran {
+  animation: none;
 }
 
 @keyframes apparition {
@@ -216,6 +329,40 @@ body[data-immersif] .contenu {
     opacity: 0;
     transform: translateY(8px);
   }
+}
+
+@keyframes disparition {
+  to {
+    opacity: 0;
+  }
+}
+
+.contenu {
+  view-transition-name: contenu;
+}
+
+/* Mode double : la liste ne bouge pas, seul le volet de droite change */
+.contenu:has(> .double) {
+  view-transition-name: none;
+}
+
+.double__detail {
+  view-transition-name: detail;
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--duree);
+  animation-timing-function: var(--courbe);
+}
+
+::view-transition-old(contenu),
+::view-transition-old(detail) {
+  animation: disparition var(--duree-courte) var(--courbe) both;
+}
+
+::view-transition-new(contenu),
+::view-transition-new(detail) {
+  animation: apparition var(--duree) var(--courbe) both;
 }
 
 /* --------------------------------------------------------------------------
@@ -252,7 +399,7 @@ body[data-immersif] .contenu {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--espace-s);
 }
 
 /* --------------------------------------------------------------------------
@@ -261,7 +408,10 @@ body[data-immersif] .contenu {
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

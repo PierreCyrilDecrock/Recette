@@ -33,6 +33,7 @@ const FICHIERS = [
   'js/app.js',
   'js/db.js',
   'js/exemples.js',
+  'js/icones.js',
   'js/modele.js',
   'js/textes.js',
   'js/composants/carte-recette.js',

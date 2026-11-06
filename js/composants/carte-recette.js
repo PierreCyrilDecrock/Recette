@@ -1,14 +1,11 @@
 // Carte d'une recette dans la grille de la liste (E1) : un lien vers la fiche, avec le
 // visuel, le titre, le temps total et la difficulté. Le visuel par défaut (dégradé
-// dérivé de l'id + initiale du titre) est exporté pour être réutilisé par la fiche.
-// Les icônes sont provisoires : elles passeront par js/icones.js à l'étape 11.
+// dérivé de l'id + initiale du titre) et la difficulté en toques sont exportés pour être
+// réutilisés par la fiche, le mode cuisine et le formulaire.
 
 import { T } from '../textes.js';
 import { DIFFICULTES, formaterDuree, initiale, teinteVisuel, tempsTotal } from '../modele.js';
-
-// Icônes statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici
-const SVG_HORLOGE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
-const SVG_COEUR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
+import { icone } from '../icones.js';
 
 /** Crée un élément à partir d'une balise, d'une classe et d'un texte (via textContent). */
 function element(balise, classe, texte) {
@@ -33,18 +30,31 @@ export function creerVisuel(recette) {
 }
 
 /**
- * Difficulté en 1 à 3 points pleins, avec un texte alternatif (« Difficulté : moyen »).
+ * Difficulté en toques : 1, 2 ou 3 toques remplies, les autres en filigrane. Même rendu
+ * partout (carte, fiche, formulaire).
  * @param {string} difficulte facile, moyen ou difficile
+ * @param {object} [options]
+ * @param {boolean} [options.decoratif] vrai quand le mot est écrit à côté : les toques sont
+ *   alors masquées aux lecteurs d'écran ; sinon elles portent « Difficulté : moyen »
+ * @param {number} [options.taille] côté d'une toque en pixels
  * @returns {HTMLSpanElement}
  */
-export function creerDifficulte(difficulte) {
+export function creerDifficulte(difficulte, { decoratif = false, taille = 16 } = {}) {
   const niveau = DIFFICULTES.indexOf(difficulte) + 1;
   const pastille = element('span', 'difficulte');
-  pastille.setAttribute('role', 'img');
-  pastille.setAttribute('aria-label', T.carte.difficulte(difficulte));
+  if (decoratif) {
+    pastille.setAttribute('aria-hidden', 'true');
+  } else {
+    pastille.setAttribute('role', 'img');
+    pastille.setAttribute('aria-label', T.carte.difficulte(difficulte));
+  }
   pastille.dataset.niveau = String(niveau);
   for (let i = 1; i <= DIFFICULTES.length; i++) {
-    pastille.append(element('span', i <= niveau ? 'difficulte__point difficulte__point--plein' : 'difficulte__point'));
+    const pleine = i <= niveau;
+    pastille.append(icone(pleine ? 'toque-pleine' : 'toque', {
+      taille,
+      classe: pleine ? 'difficulte__toque difficulte__toque--pleine' : 'difficulte__toque',
+    }));
   }
   return pastille;
 }
@@ -65,8 +75,11 @@ export function creerCarteRecette(recette) {
   const total = tempsTotal(recette);
   if (total > 0) {
     const temps = element('span', 'carte-recette__temps');
-    temps.innerHTML = SVG_HORLOGE;
-    temps.append(element('span', 'visuellement-cache', `${T.carte.tempsTotal} `), formaterDuree(total));
+    temps.append(
+      icone('horloge', { taille: 16 }),
+      element('span', 'visuellement-cache', `${T.carte.tempsTotal} `),
+      formaterDuree(total),
+    );
     infos.append(temps);
   }
   if (DIFFICULTES.includes(recette.difficulte)) infos.append(creerDifficulte(recette.difficulte));
@@ -78,8 +91,7 @@ export function creerCarteRecette(recette) {
   // DOM pour que le nom du lien commence par le titre de la recette.
   if (recette.favori === true) {
     const badge = element('span', 'carte-recette__favori');
-    badge.innerHTML = SVG_COEUR;
-    badge.append(element('span', 'visuellement-cache', T.carte.favori));
+    badge.append(icone('coeur-plein', { taille: 18 }), element('span', 'visuellement-cache', T.carte.favori));
     lien.append(badge);
   }
 

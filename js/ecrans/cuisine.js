@@ -15,14 +15,7 @@ import {
   trouverIngredientsDansTexte,
 } from '../modele.js';
 import { creerListeIngredients } from '../composants/liste-ingredients.js';
-
-// Icônes statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici.
-// Provisoires : elles passeront par js/icones.js à l'étape 11.
-const SVG_FERMER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>';
-const SVG_INGREDIENTS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg>';
-const SVG_PRECEDENT = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>';
-const SVG_SUIVANT = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg>';
-const SVG_TERMINE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+import { icone } from '../icones.js';
 
 /** Distance (px) au-delà de laquelle un geste est reconnu comme horizontal ou vertical. */
 const SEUIL_DEPART = 10;
@@ -106,13 +99,12 @@ export async function afficher(conteneur, params) {
   const fermer = element('button', 'bouton bouton--icone cuisine__fermer');
   fermer.type = 'button';
   fermer.setAttribute('aria-label', C.quitter);
-  fermer.innerHTML = SVG_FERMER;
+  fermer.append(icone('croix'));
   const titre = element('h1', 'cuisine__titre', recette.titre);
   const boutonPanneau = element('button', 'bouton cuisine__bouton-ingredients');
   boutonPanneau.type = 'button';
   boutonPanneau.setAttribute('aria-haspopup', 'dialog');
-  boutonPanneau.innerHTML = SVG_INGREDIENTS;
-  boutonPanneau.append(element('span', undefined, C.ingredients));
+  boutonPanneau.append(icone('liste', { taille: 20 }), element('span', undefined, C.ingredients));
   entete.append(fermer, titre, boutonPanneau);
 
   const progression = element('div', 'cuisine__progression');
@@ -139,8 +131,7 @@ export async function afficher(conteneur, params) {
   navigation.setAttribute('aria-label', C.navigation);
   const precedent = element('button', 'bouton cuisine__precedent');
   precedent.type = 'button';
-  precedent.innerHTML = SVG_PRECEDENT;
-  precedent.append(element('span', undefined, C.precedent));
+  precedent.append(icone('chevron-gauche', { taille: 22 }), element('span', undefined, C.precedent));
   const suivant = element('button', 'bouton bouton--principal cuisine__suivant');
   suivant.type = 'button';
   navigation.append(precedent, suivant);
@@ -200,8 +191,9 @@ export async function afficher(conteneur, params) {
     precedent.setAttribute('aria-disabled', String(etape === 1));
     const derniere = etape === total;
     suivant.hidden = fin;
-    suivant.replaceChildren(element('span', undefined, derniere ? C.termine : C.suivant));
-    suivant.insertAdjacentHTML(derniere ? 'afterbegin' : 'beforeend', derniere ? SVG_TERMINE : SVG_SUIVANT);
+    const libelleSuivant = element('span', undefined, derniere ? C.termine : C.suivant);
+    if (derniere) suivant.replaceChildren(icone('coche', { taille: 22 }), libelleSuivant);
+    else suivant.replaceChildren(libelleSuivant, icone('chevron-droite', { taille: 22 }));
     if (fin) carte.querySelector('.cuisine__fin-titre').focus({ preventScroll: true });
     else if (etaitFin && document.activeElement === document.body) suivant.focus();
 
@@ -478,7 +470,7 @@ function creerPanneau(ingredients, portions) {
   titres.append(h2, element('p', 'texte-doux', C.pourPortions(portions)));
   const fermer = element('button', 'bouton bouton--icone panneau__fermer');
   fermer.setAttribute('aria-label', C.fermer);
-  fermer.innerHTML = SVG_FERMER;
+  fermer.append(icone('croix'));
   fermer.autofocus = true;
   tete.append(titres, fermer);
   const liste = element('div', 'panneau__liste');

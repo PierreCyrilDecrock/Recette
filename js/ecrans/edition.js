@@ -23,12 +23,8 @@ import {
 import { EVENEMENT_PORTIONS, creerSelecteurPortions } from '../composants/selecteur-portions.js';
 import { EVENEMENT_LIGNES, creerListeLignes } from '../composants/liste-lignes.js';
 import { afficherToast } from '../composants/toast.js';
-
-// Icônes statiques (aucun texte saisi par l'utilisateur) : innerHTML est sans risque ici.
-// Provisoires : elles passeront par js/icones.js à l'étape 11.
-const SVG_AJOUTER = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>';
-const SVG_LIGNE_LIBRE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h16"/><path d="M4 7h10M4 17h7" opacity=".5"/></svg>';
-const SVG_CHAMPS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="5" height="6" rx="1"/><rect x="10" y="5" width="11" height="6" rx="1"/><rect x="3" y="13" width="18" height="6" rx="1"/></svg>';
+import { creerDifficulte } from '../composants/carte-recette.js';
+import { icone } from '../icones.js';
 
 /** Champs de temps : [clé de la recette, clé du libellé dans T.edition]. */
 const TEMPS = [
@@ -91,8 +87,7 @@ function ajusterHauteur(zone) {
 function boutonAjouter(libelle) {
   const bouton = element('button', 'bouton bouton--secondaire edition__ajouter');
   bouton.type = 'button';
-  bouton.innerHTML = SVG_AJOUTER;
-  bouton.append(element('span', undefined, libelle));
+  bouton.append(icone('plus', { taille: 20 }), element('span', undefined, libelle));
   return bouton;
 }
 
@@ -240,7 +235,10 @@ export async function afficher(conteneur, params) {
     radio.name = 'difficulte';
     radio.value = niveau;
     radio.dataset.champ = 'difficulte';
-    option.append(radio, element('span', undefined, E.difficultes[niveau]));
+    // Mêmes toques que sur les cartes et la fiche ; le mot reste le nom de l'option
+    const apparence = element('span');
+    apparence.append(creerDifficulte(niveau, { decoratif: true, taille: 14 }), element('span', undefined, E.difficultes[niveau]));
+    option.append(radio, apparence);
     options.append(option);
     return radio;
   });
@@ -398,7 +396,7 @@ export async function afficher(conteneur, params) {
       numeroter: (numero) => groupe.setAttribute('aria-label', E.ingredient(numero)),
       actions: [{
         libelle: () => (mode === 'libre' ? E.champsDetailles : E.ligneLibre),
-        icone: () => (mode === 'libre' ? SVG_CHAMPS : SVG_LIGNE_LIBRE),
+        icone: () => (mode === 'libre' ? 'champs' : 'ligne-libre'),
         executer: () => {
           synchroniser();
           mode = mode === 'libre' ? 'detail' : 'libre';

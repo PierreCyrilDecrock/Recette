@@ -7,8 +7,12 @@
 // Elle peut aussi porter une garde de sortie, confirmerSortie() → true | Promise<boolean> :
 // true laisse partir tout de suite ; sinon le routeur revient à l'URL de l'écran, attend la
 // réponse, puis rejoue la navigation (lien, bouton retour ou avance) si elle est acceptée.
+// Sur grand écran (≥ 1024 px), les routes « double » affichent deux volets côte à côte :
+// la liste à gauche (elle reste en place d'une fiche à l'autre) et la fiche à droite.
+// Le changement d'écran passe par l'API View Transitions quand elle existe (fondu sinon).
 
 import { T } from './textes.js';
+import { icone } from './icones.js';
 
 /**
  * Version de l'application (affichée dans les réglages), référence unique à modifier à
@@ -24,14 +28,16 @@ export const VERSION = '0.1.0';
  * - extra : paramètres fixes transmis à l'écran ;
  * - onglet : onglet à marquer comme actif (aria-current="page") ;
  * - immersif : masque la barre d'onglets et le bouton « + » ;
- * - sansAjout : masque seulement le bouton « + » (l'écran a sa propre barre d'actions en bas).
+ * - sansAjout : masque seulement le bouton « + » sur mobile (l'écran a sa propre barre
+ *   d'actions en bas) ; sur grand écran, il reste dans l'en-tête ;
+ * - double : sur grand écran, la liste reste affichée à gauche de l'écran (voir afficherDouble).
  * Les paramètres de requête (« #/cuisine/42?portions=6 ») sont transmis en chaînes ;
  * ceux du motif et de extra l'emportent en cas de conflit.
  */
 const ROUTES = [
-  { motif: /^\/$/, ecran: 'liste', onglet: 'recettes' },
-  { motif: /^\/favoris$/, ecran: 'liste', extra: { favoris: true }, onglet: 'favoris' },
-  { motif: /^\/recette\/([^/]+)$/, ecran: 'fiche', cles: ['id'], sansAjout: true },
+  { motif: /^\/$/, ecran: 'liste', onglet: 'recettes', double: true },
+  { motif: /^\/favoris$/, ecran: 'liste', extra: { favoris: true }, onglet: 'favoris', double: true },
+  { motif: /^\/recette\/([^/]+)$/, ecran: 'fiche', cles: ['id'], sansAjout: true, double: true },
   { motif: /^\/nouvelle$/, ecran: 'edition', immersif: true },
   { motif: /^\/edition\/([^/]+)$/, ecran: 'edition', cles: ['id'], immersif: true },
   { motif: /^\/cuisine\/([^/]+)$/, ecran: 'cuisine', cles: ['id'], immersif: true },
@@ -42,8 +48,16 @@ const conteneur = document.getElementById('app');
 const barreOnglets = document.querySelector('.barre-onglets');
 const boutonFlottant = document.querySelector('.bouton-flottant');
 
-// Fonction de nettoyage renvoyée par l'écran affiché
+/** Largeur à partir de laquelle la liste et la fiche s'affichent côte à côte. */
+const ecranLarge = matchMedia('(min-width: 1024px)');
+const mouvementReduit = matchMedia('(prefers-reduced-motion: reduce)');
+
+// Fonction de nettoyage renvoyée par l'écran affiché (en mode double : celui de droite)
 let nettoyageCourant = null;
+// Mode double : volets de la liste et du détail ({ element, liste, detail, favoris, nettoyage })
+let volet = null;
+// Réaffichage dû au franchissement de 1024 px : le focus ne bouge pas
+let garderFocus = false;
 // Numéro de la navigation en cours : ignore les chargements devenus obsolètes
 let numeroNavigation = 0;
 // Le premier affichage ne déplace pas le focus (la page vient de s'ouvrir)
@@ -87,39 +101,61 @@ function resoudre(hash) {
   return null;
 }
 
-/** Marque l'onglet actif et masque la navigation en mode immersif. */
-function mettreAJourCoquille(route) {
-  for (const onglet of barreOnglets.querySelectorAll('[data-onglet]')) {
-    if (onglet.dataset.onglet === route.onglet) {
-      onglet.setAttribute('aria-current', 'page');
+/**
+ * Marque l'onglet actif et masque la navigation en mode immersif.
+ * @param {object} route
+ * @param {string} [onglet] onglet à marquer à la place de celui de la route (mode double)
+ */
+function mettreAJourCoquille(route, onglet = route.onglet) {
+  for (const lien of barreOnglets.querySelectorAll('[data-onglet]')) {
+    if (lien.dataset.onglet === onglet) {
+      lien.setAttribute('aria-current', 'page');
     } else {
-      onglet.removeAttribute('aria-current');
+      lien.removeAttribute('aria-current');
     }
   }
   const immersif = Boolean(route.immersif);
   barreOnglets.hidden = immersif;
-  boutonFlottant.hidden = immersif || Boolean(route.sansAjout);
+  boutonFlottant.hidden = immersif;
   document.body.toggleAttribute('data-immersif', immersif);
+  // Le « + » ne disparaît que sur mobile (CSS) : sur grand écran, il est dans l'en-tête
+  document.body.toggleAttribute('data-sans-ajout', Boolean(route.sansAjout));
 }
 
-/** Appelle la fonction de nettoyage de l'écran précédent, sans bloquer la navigation. */
-function nettoyer() {
-  if (typeof nettoyageCourant === 'function') {
-    try {
-      nettoyageCourant();
-    } catch (erreur) {
-      console.error(erreur);
-    }
+/** Appelle une fonction de nettoyage d'écran, sans bloquer la navigation. */
+function appelerNettoyage(nettoyage) {
+  if (typeof nettoyage !== 'function') return;
+  try {
+    nettoyage();
+  } catch (erreur) {
+    console.error(erreur);
   }
+}
+
+/** Nettoie l'écran précédent (en mode double : le volet de droite). */
+function nettoyer() {
+  appelerNettoyage(nettoyageCourant);
   nettoyageCourant = null;
 }
 
-/** Donne le focus au titre du nouvel écran et met à jour le titre du document. */
-function annoncerEcran() {
-  const titre = conteneur.querySelector('h1');
+/** Quitte le mode double : nettoie la liste de gauche et retire les volets. */
+function nettoyerVolet() {
+  if (!volet) return;
+  appelerNettoyage(volet.nettoyage);
+  volet.element.remove();
+  volet = null;
+}
+
+/**
+ * Donne le focus au titre du nouvel écran et met à jour le titre du document.
+ * @param {HTMLElement} [zone] partie de la page qui vient de changer (hôte de l'écran,
+ *   liste du mode double) ; le focus revient à <main> si elle n'a pas de titre
+ */
+function annoncerEcran(zone = conteneur) {
+  const titre = zone.querySelector('h1');
   document.title = titre ? T.app.titreDocument(titre.textContent) : T.app.nom;
   window.scrollTo(0, 0);
-  if (premierAffichage) {
+  if (premierAffichage || garderFocus) {
     premierAffichage = false;
     return;
   }
@@ -248,35 +284,177 @@ async function naviguer() {
 
   if (mettreAJourSurPlace(route, params)) return;
 
+  const double = Boolean(route.double) && ecranLarge.matches;
   try {
-    const module = await import(`./ecrans/${route.ecran}.js`);
+    const [module, moduleListe] = await Promise.all([
+      import(`./ecrans/${route.ecran}.js`),
+      double && route.ecran !== 'liste' ? import('./ecrans/liste.js') : null,
+    ]);
     // Une autre navigation a commencé pendant le chargement : on l'ignore
     if (numero !== numeroNavigation) return;
 
-    nettoyer();
-    mettreAJourCoquille(route);
-    conteneur.replaceChildren();
-    // La position est notée avant l'affichage : l'écran peut la lire dans history.state
-    marquerPosition();
-    const nettoyage = await module.afficher(conteneur, params);
-    if (numero !== numeroNavigation) {
-      // L'écran a fini de s'afficher alors qu'on l'a déjà quitté
-      if (typeof nettoyage === 'function') nettoyage();
-      return;
-    }
-    nettoyageCourant = nettoyage ?? null;
-    routeCourante = route;
-    paramsCourants = params;
-    annoncerEcran();
+    await avecTransition(async () => {
+      // Transition sautée par une navigation plus récente : son rappel est quand même
+      // appelé, parfois après celui de la nouvelle ; il ne doit plus toucher à la page
+      if (numero !== numeroNavigation) return;
+      if (double) {
+        await afficherDouble(route, params, module, moduleListe ?? module, numero);
+        return;
+      }
+      nettoyer();
+      nettoyerVolet();
+      mettreAJourCoquille(route);
+      const hote = creerHote();
+      conteneur.replaceChildren(hote);
+      // La position est notée avant l'affichage : l'écran peut la lire dans history.state
+      marquerPosition();
+      const nettoyage = await module.afficher(hote, params);
+      if (numero !== numeroNavigation) {
+        // L'écran a fini de s'afficher alors qu'on l'a déjà quitté
+        appelerNettoyage(nettoyage);
+        hote.remove();
+        return;
+      }
+      nettoyageCourant = nettoyage ?? null;
+      routeCourante = route;
+      paramsCourants = params;
+      annoncerEcran(hote);
+    });
   } catch (erreur) {
     console.error(erreur);
     if (numero !== numeroNavigation) return;
     nettoyer();
+    nettoyerVolet();
     routeCourante = null;
     mettreAJourCoquille(route);
     afficherErreur();
     marquerPosition();
+  } finally {
+    if (numero === numeroNavigation) garderFocus = false;
   }
+}
+
+/**
+ * Mode double (grand écran) : la liste à gauche, la fiche ou une invitation à droite.
+ * La liste n'est reconstruite que si elle n'est pas déjà affichée (ou si l'on passe des
+ * recettes aux favoris) : elle garde sa recherche et son défilement d'une fiche à l'autre,
+ * et marque la recette ouverte (selectionner). Sa fonction de nettoyage est gardée à part.
+ * @param {object} route
+ * @param {object} params
+ * @param {{ afficher: Function }} module écran de la route
+ * @param {{ afficher: Function }} moduleListe écran de la liste
+ * @param {number} numero numéro de la navigation
+ */
+async function afficherDouble(route, params, module, moduleListe, numero) {
+  const fiche = route.ecran !== 'liste';
+  // Sur une fiche, la liste déjà affichée reste (recettes ou favoris)
+  const favoris = fiche ? (volet?.favoris ?? false) : Boolean(params.favoris);
+
+  nettoyer();
+  let nouveauVolet = false;
+  if (!volet || volet.favoris !== favoris) {
+    nettoyerVolet();
+    volet = creerVolet(favoris);
+    conteneur.replaceChildren(volet.element);
+    nouveauVolet = true;
+  }
+  mettreAJourCoquille(route, favoris ? 'favoris' : 'recettes');
+  marquerPosition();
+
+  if (nouveauVolet) {
+    const ce = volet;
+    const nettoyageListe = await moduleListe.afficher(ce.liste, { favoris });
+    // Volet déjà retiré par une navigation plus récente : on libère tout de suite sa liste
+    if (ce !== volet) appelerNettoyage(nettoyageListe);
+    else ce.nettoyage = nettoyageListe;
+    if (numero !== numeroNavigation) return;
+  }
+  volet.nettoyage?.selectionner?.(fiche ? params.id : null);
+  volet.element.dataset.detail = fiche ? 'fiche' : 'vide';
+
+  let nettoyage = null;
+  const hote = creerHote();
+  volet.detail.replaceChildren(hote);
+  if (fiche) {
+    nettoyage = await module.afficher(hote, params);
+    if (numero !== numeroNavigation) {
+      appelerNettoyage(nettoyage);
+      hote.remove();
+      return;
+    }
+  } else {
+    hote.append(creerInvitation());
+  }
+  nettoyageCourant = nettoyage ?? null;
+  routeCourante = route;
+  paramsCourants = params;
+  annoncerEcran(fiche ? hote : volet.liste);
+}
+
+/**
+ * Hôte d'un écran : l'écran y ajoute son contenu. Sans boîte (display: contents), il
+ * ne change rien à la mise en page ; si la navigation devient obsolète pendant que
+ * l'écran se construit, on le retire avec tout ce que l'écran y a mis.
+ */
+function creerHote() {
+  const hote = document.createElement('div');
+  hote.className = 'hote-ecran';
+  return hote;
+}
+
+/** Structure des deux volets (mode double). */
+function creerVolet(favoris) {
+  const element = document.createElement('div');
+  element.className = 'double';
+  const liste = document.createElement('div');
+  liste.className = 'double__liste';
+  const detail = document.createElement('div');
+  detail.className = 'double__detail';
+  element.append(liste, detail);
+  return { element, liste, detail, favoris, nettoyage: null };
+}
+
+/** Volet de droite quand aucune recette n'est ouverte : une invitation à en choisir une. */
+function creerInvitation() {
+  const bloc = document.createElement('div');
+  bloc.className = 'ecran invitation';
+  const pastille = document.createElement('div');
+  pastille.className = 'invitation__pastille';
+  pastille.append(icone('toque', { taille: 40 }));
+  const titre = document.createElement('h2');
+  titre.className = 'invitation__titre';
+  titre.textContent = T.app.invitationTitre;
+  const texte = document.createElement('p');
+  texte.className = 'invitation__texte texte-doux';
+  texte.textContent = T.app.invitationTexte;
+  bloc.append(pastille, titre, texte);
+  return bloc;
+}
+
+/**
+ * Change d'écran dans une transition de vue (fondu entre l'ancien et le nouvel écran)
+ * quand le navigateur la connaît et que l'utilisateur accepte le mouvement. Sinon, la
+ * mise à jour est directe et chaque écran apparaît par l'animation CSS « apparition ».
+ * @param {() => Promise<void>} miseAJour
+ * @returns {Promise<void>} résolue (ou rejetée) avec la mise à jour
+ */
+function avecTransition(miseAJour) {
+  if (premierAffichage || garderFocus || typeof document.startViewTransition !== 'function' || mouvementReduit.matches) {
+    return miseAJour();
+  }
+  const transition = document.startViewTransition(miseAJour);
+  // Transition sautée (une autre commence, délai dépassé) : la mise à jour a lieu quand même
+  transition.ready.catch(() => {});
+  transition.finished.catch(() => {});
+  return transition.updateCallbackDone;
+}
+
+/** Franchissement de 1024 px sur un écran double : on passe d'un mode à l'autre. */
+function changerDisposition() {
+  if (!routeCourante?.double) return;
+  garderFocus = true;
+  routeCourante = null; // force la reconstruction
+  naviguer();
 }
 
 /** Remplace les libellés de repli de index.html par ceux de textes.js. */
@@ -288,6 +466,16 @@ function appliquerTextes() {
   for (const element of document.querySelectorAll('[data-texte-aria]')) {
     const texte = lire(element.dataset.texteAria);
     if (texte) element.setAttribute('aria-label', texte);
+  }
+}
+
+/** Remplace les emplacements d'icône de index.html (data-icone) par les icônes de icones.js. */
+function appliquerIcones() {
+  for (const emplacement of document.querySelectorAll('[data-icone]')) {
+    emplacement.replaceWith(icone(emplacement.dataset.icone, {
+      taille: Number(emplacement.dataset.taille) || 24,
+      classe: emplacement.className,
+    }));
   }
 }
 
@@ -361,7 +549,11 @@ async function enregistrerServiceWorker() {
 }
 
 appliquerTextes();
+appliquerIcones();
+// Les transitions de vue sont gérées en JS : l'animation CSS des écrans devient inutile
+if (typeof document.startViewTransition === 'function') document.documentElement.classList.add('transitions-vues');
 window.addEventListener('hashchange', naviguer);
+ecranLarge.addEventListener('change', changerDisposition);
 naviguer();
 
 // Après le premier affichage : l'installation télécharge tous les fichiers de l'app

@@ -247,7 +247,7 @@ test('thème : appliqué tout de suite, mémorisé et posé avant le premier ren
   await expect(theme('Sombre')).toBeChecked();
   await theme('Clair').check();
   await page.emulateMedia({ colorScheme: 'dark' });
-  expect(await fond()).toBe('rgb(250, 246, 242)');
+  expect(await fond()).toBe('rgb(246, 240, 234)');
 
   // Système : plus de thème forcé, on suit l'appareil
   await theme('Système').check();

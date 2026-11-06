@@ -159,6 +159,24 @@ function attendre(requete) {
  * @returns {Promise<R>}
  */
 async function transaction(noms, mode, travail) {
+  const resultat = await executer(noms, mode, travail);
+  // Recettes ou catégories modifiées : les écrans affichés peuvent se rafraîchir
+  if (mode === 'readwrite' && noms.some((nom) => nom !== 'reglages')) {
+    changements.dispatchEvent(new CustomEvent(EVENEMENT_CHANGEMENT, { detail: { magasins: noms } }));
+  }
+  return resultat;
+}
+
+/**
+ * Signale chaque écriture terminée dans les magasins recettes ou categories
+ * (événement EVENEMENT_CHANGEMENT, detail.magasins). La liste affichée à côté de la
+ * fiche, sur grand écran, l'écoute pour rester à jour (favori, suppression, copie…).
+ */
+export const changements = new EventTarget();
+export const EVENEMENT_CHANGEMENT = 'changement';
+
+/** Corps de transaction() : ouvre la transaction et attend sa fin. */
+async function executer(noms, mode, travail) {
   const db = await ouvrir();
   return new Promise((resoudre, rejeter) => {
     let tx;

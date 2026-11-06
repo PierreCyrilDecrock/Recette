@@ -6,7 +6,7 @@
   <title>Recette</title>
   <meta name="description" content="Créez, rangez et cuisinez vos recettes, même hors ligne.">
   <!-- Couleur de la barre du navigateur : identique à --fond dans chaque thème -->
-  <meta name="theme-color" content="#faf6f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#f6f0ea" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#171311" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
   <script>
@@ -18,7 +18,7 @@
         document.documentElement.dataset.theme = theme;
         document.querySelector('meta[name="color-scheme"]').content = theme === 'clair' ? 'light' : 'dark';
         document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
-          meta.content = theme === 'clair' ? '#faf6f2' : '#171311';
+          meta.content = theme === 'clair' ? '#f6f0ea' : '#171311';
         });
       }
     } catch (erreur) {
@@ -40,46 +40,38 @@
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
+  <!-- Les libellés et icônes en dur servent de repli : app.js les remplace par ceux de
+       js/textes.js et js/icones.js (data-texte, data-texte-aria, data-icone).
+       Ordre du clavier : marque, onglets, « + », puis l'écran. Sur mobile, la barre
+       d'onglets et le « + » sont fixés en bas (zone du pouce) ; dès 1024 px, ils
+       prennent place dans l'en-tête. -->
   <header class="entete">
     <a class="entete__marque" href="#/">
-      <svg class="entete__logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M6 13.5a6 6 0 0 1 12 0V18a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-4.5Z" />
-        <path d="M8.5 7.5a3.5 3.5 0 0 1 7 0" />
-      </svg>
+      <span class="entete__logo" data-icone="toque" data-taille="28"></span>
       <span data-texte="app.nom">Recette</span>
+    </a>
+
+    <nav class="barre-onglets" aria-label="Navigation principale" data-texte-aria="app.navigation">
+      <a class="barre-onglets__onglet" href="#/" data-onglet="recettes">
+        <span class="barre-onglets__icone" data-icone="livre"></span>
+        <span data-texte="app.onglets.recettes">Recettes</span>
+      </a>
+      <a class="barre-onglets__onglet" href="#/favoris" data-onglet="favoris">
+        <span class="barre-onglets__icone" data-icone="coeur"></span>
+        <span data-texte="app.onglets.favoris">Favoris</span>
+      </a>
+      <a class="barre-onglets__onglet" href="#/reglages" data-onglet="reglages">
+        <span class="barre-onglets__icone" data-icone="reglages"></span>
+        <span data-texte="app.onglets.reglages">Réglages</span>
+      </a>
+    </nav>
+
+    <a class="bouton-flottant" href="#/nouvelle">
+      <span class="bouton-flottant__icone" data-icone="plus" data-taille="28"></span>
+      <span class="bouton-flottant__texte" data-texte="app.nouvelleRecette">Nouvelle recette</span>
     </a>
   </header>
 
   <main id="app" class="contenu" tabindex="-1"></main>
-
-  <!-- Les libellés en dur servent de repli : app.js les remplace par ceux de js/textes.js.
-       Bouton flottant placé avant la barre d'onglets : l'ordre du clavier suit l'ordre visuel -->
-  <a class="bouton-flottant" href="#/nouvelle" aria-label="Nouvelle recette" data-texte-aria="app.nouvelleRecette">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" /></svg>
-  </a>
-
-  <nav class="barre-onglets" aria-label="Navigation principale" data-texte-aria="app.navigation">
-    <a class="barre-onglets__onglet" href="#/" data-onglet="recettes">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v16H6.5A1.5 1.5 0 0 0 5 20.5v-16Z" />
-        <path d="M5 20.5A1.5 1.5 0 0 0 6.5 22H19v-3M9 7h6M9 11h6" />
-      </svg>
-      <span data-texte="app.onglets.recettes">Recettes</span>
-    </a>
-    <a class="barre-onglets__onglet" href="#/favoris" data-onglet="favoris">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-      </svg>
-      <span data-texte="app.onglets.favoris">Favoris</span>
-    </a>
-    <a class="barre-onglets__onglet" href="#/reglages" data-onglet="reglages">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-        <circle cx="16" cy="7" r="2" />
-        <circle cx="10" cy="17" r="2" />
-      </svg>
-      <span data-texte="app.onglets.reglages">Réglages</span>
-    </a>
-  </nav>
 </body>
 </html>

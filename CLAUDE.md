@@ -28,7 +28,7 @@ js/
   modele.js     logique métier pure (validation, mise à l'échelle, parsing…)
   textes.js     tous les textes d'interface (objet T)
   exemples.js   recettes d'exemple
-  icones.js     icônes SVG en ligne
+  icones.js     icônes SVG en ligne (icone(nom, { taille, libelle }))
   ecrans/       liste.js, fiche.js, edition.js, cuisine.js, reglages.js
   composants/   carte-recette.js, selecteur-portions.js, toast.js, minuteur.js, liste-lignes.js,
                 liste-ingredients.js
@@ -54,7 +54,24 @@ docs/         cahier des charges et plan de développement
 - Routage (`js/app.js`, table `ROUTES`) : `#/favoris` réutilise `liste.js` (`params.favoris`),
   `#/nouvelle` réutilise `edition.js` (sans `id`). Le routeur donne le focus au `<h1>` de l'écran ;
   les routes `immersif` (édition, cuisine) masquent la barre d'onglets et le bouton « + » ;
-  `sansAjout` (fiche) masque seulement le « + », remplacé par la barre d'actions de l'écran.
+  `sansAjout` (fiche) masque seulement le « + » sous 1024 px, remplacé par la barre d'actions.
+  Chaque écran s'affiche dans un hôte neuf (`div.hote-ecran`, `display: contents`), retiré si
+  la navigation devient obsolète pendant sa construction.
+- Grand écran (≥ 1024 px, `ecranLarge`) : les routes `double` (`#/`, `#/favoris`, `#/recette/:id`)
+  affichent deux volets (`.double` : `.double__liste` à gauche, collée, défilement propre ;
+  `.double__detail` à droite : la fiche, ou l'invitation « Choisissez une recette »). La liste
+  n'est pas reconstruite d'une fiche à l'autre (recherche et défilement gardés) ; sa fonction de
+  nettoyage porte `selectionner(id)` (carte `aria-current="page"`, titre de la liste en `<h2>`
+  sous le `<h1>` de la fiche). Elle se recharge à chaque écriture en base : `db.js` émet
+  `EVENEMENT_CHANGEMENT` sur `changements` (recettes ou catégories modifiées). L'onglet de la
+  liste affichée reste actif sur une fiche. Franchir 1024 px reconstruit l'écran sans déplacer
+  le focus. La barre d'onglets et « Nouvelle recette » passent dans l'en-tête (`index.html` :
+  marque, onglets, « + », dans cet ordre).
+- Changement d'écran : `document.startViewTransition` quand il existe (classe `transitions-vues`
+  sur `<html>`, noms `contenu` et `detail`), sinon l'animation CSS `apparition` de `.ecran` ;
+  ni l'un ni l'autre en `prefers-reduced-motion`. Pendant une transition (≈ 200 ms), le
+  navigateur adresse les événements à `<html>` : un test qui envoie des événements bruts
+  attend `!document.activeViewTransition`.
   Les paramètres de requête du hash arrivent en chaînes dans `params` (`#/cuisine/:id?portions=6`
   → `params.portions`, à lire avec `lirePortions`) ; ceux du motif l'emportent.
 - Mode cuisine (E4, `cuisine.js`) : `#/cuisine/:id?portions=N&etape=K` (`etape` omis pour la
@@ -122,6 +139,15 @@ docs/         cahier des charges et plan de développement
 - Bulle d'information : `<span class="bulle" popover="auto">` placée juste après son bouton
   (`popoverTargetElement`, ordre de lecture conservé), positionnée en JS à l'ouverture ; repli sur
   `hidden` sans l'API Popover. Panneau qui monte du bas : `<dialog class="panneau">` en `showModal()`.
+- Icônes : uniquement `icone(nom, { taille, libelle, classe })` de `js/icones.js` (grille 24,
+  contour 1,75 px, `currentColor`, classe `icone icone--<nom>`) ; décorative (`aria-hidden`)
+  sans libellé, `role="img"` avec. `index.html` pose des emplacements `data-icone` (et
+  `data-taille`) qu'`app.js` remplace au démarrage. Pas de `fill`/`stroke` en CSS sur les icônes
+  (seulement `color`, et `fill` pour le cœur plein). Seules les illustrations d'états vides
+  (`liste.js`) sont dessinées à part.
+- Difficulté : `creerDifficulte(difficulte, { decoratif, taille })` de
+  `js/composants/carte-recette.js` (3 toques, `.difficulte__toque--pleine` pour le niveau,
+  les autres en filigrane), sur la carte, la fiche et les options du formulaire.
 - Visuel par défaut d'une recette sans photo : `creerVisuel(recette)` de `js/composants/carte-recette.js`
   (dégradé dont la teinte vient de `teinteVisuel(id)`, initiale via `initiale(titre)`), à réutiliser
   tel quel par la fiche et le mode cuisine.
@@ -138,15 +164,29 @@ docs/         cahier des charges et plan de développement
 - Actions principales dans la zone du pouce (bas de l'écran) ; cibles tactiles ≥ 44 × 44 px.
 - Couleurs uniquement via les variables CSS : `--accent`, `--surface`, `--fond`, `--texte`,
   `--texte-doux`, `--bordure`, plus `--sur-accent` (texte posé sur l'accent ou le danger),
-  `--danger` et `--ombre`. Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1 (ratios notés
-  dans `css/base.css`).
+  `--danger`, `--contour` (contour des cartes : quasi invisible en clair, fin en sombre),
+  `--teinte` (8 % d'accent sur la surface), `--ombre` (cartes, transparente en sombre) et
+  `--ombre-haute` (ce qui flotte). Thèmes clair et sombre ; contraste texte/fond ≥ 4,5:1
+  (ratios notés dans `css/base.css`). Accent avec parcimonie : actions principales, onglet
+  actif, favori, numéros d'étape ; sélections neutres (puce en couleurs inversées, segment en
+  pastille de surface).
+- Espacements sur une échelle de 4 px : `--espace-xs` (4), `-s` (8), `-m` (12), `--espace` (16),
+  `-l` (24), `-xl` (32) ; rayons `--rayon` (16), `--rayon-petit` (12), `--rayon-pilule` ;
+  ombres composées `--ombre-carte`, `--ombre-flottante` ; marges latérales `--marge-gauche` et
+  `--marge-droite` (safe areas comprises, contenu centré à 1200 px dès 1024 px).
 - Thème : `light-dark()` + `color-scheme` suivent le système ; `data-theme="clair|sombre"` sur
   `<html>` force l'un des deux. Choix mémorisé dans `localStorage` (`recette.theme`, absent =
   système), seule exception à IndexedDB : le script en ligne de `index.html` doit le lire de façon
   synchrone pour l'appliquer avant le premier rendu (mêmes clé et couleurs que `reglages.js`).
-- Cartes : coins arrondis de 16 px, marges internes de 16 px, ombre légère ou bordure fine.
+- Cartes : coins arrondis de 16 px, marges internes de 16 px, ombre légère (`--ombre-carte`) et
+  contour `--contour`.
 - Typographie : `ui-rounded, system-ui, sans-serif` ; corps du texte ≥ 16 px.
-- Transitions de 150 à 250 ms ; tout mouvement désactivé avec `prefers-reduced-motion`.
+- Transitions de 150 à 250 ms (`--duree-courte`, `--duree`, `--duree-longue`) ; retour au
+  toucher par `:active` et `scale(var(--pression))` ; tout mouvement désactivé avec
+  `prefers-reduced-motion`.
+- Titres longs : `-webkit-line-clamp` (cartes, 3 lignes), ellipse sur une ligne (titre du mode
+  cuisine, puces de catégories de la liste), coupure des mots trop longs ailleurs ; rien ne
+  déborde de 320 à 1440 px (`tests/e2e/design.spec.js`).
 - Encoches et barre système : `env(safe-area-inset-*)`.
 - Accessibilité WCAG 2.2 AA : libellés ARIA, navigation clavier, focus visible.
 

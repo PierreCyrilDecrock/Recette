@@ -4,13 +4,10 @@
 
 import { T } from '../textes.js';
 import { LIMITES } from '../modele.js';
+import { icone } from '../icones.js';
 
 /** Nom de l'événement émis (et propagé) à chaque changement de valeur. */
 export const EVENEMENT_PORTIONS = 'changement-portions';
-
-// Icônes statiques : innerHTML est sans risque ici
-const SVG_MOINS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 12h12"/></svg>';
-const SVG_PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6v12M6 12h12"/></svg>';
 
 /** Borne une valeur entre min et max (entier). */
 const borner = (valeur, min, max) => Math.min(max, Math.max(min, Math.round(valeur)));
@@ -34,16 +31,16 @@ export function creerSelecteurPortions({
   racine.setAttribute('role', 'group');
   racine.setAttribute('aria-label', T.portions.groupe);
 
-  const creerBouton = (classe, libelle, icone) => {
+  const creerBouton = (classe, libelle, nomIcone) => {
     const bouton = document.createElement('button');
     bouton.type = 'button';
     bouton.className = `selecteur-portions__bouton ${classe}`;
     bouton.setAttribute('aria-label', libelle);
-    bouton.innerHTML = icone;
+    bouton.append(icone(nomIcone, { taille: 20 }));
     return bouton;
   };
-  const moins = creerBouton('selecteur-portions__moins', T.portions.moins, SVG_MOINS);
-  const plus = creerBouton('selecteur-portions__plus', T.portions.plus, SVG_PLUS);
+  const moins = creerBouton('selecteur-portions__moins', T.portions.moins, 'moins');
+  const plus = creerBouton('selecteur-portions__plus', T.portions.plus, 'plus');
 
   // Zone annoncée : « 6 portions » est lu à chaque changement
   const affichage = document.createElement('output');
